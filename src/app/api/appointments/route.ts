@@ -4,7 +4,7 @@ import { ApiError, toErrorResponse } from "@/lib/api-error";
 import { randevuCalismaSaatiIcindeMi, yerelAnHesapla } from "@/lib/availability";
 import { APPOINTMENT_DTO_INCLUDE, toAppointmentDto } from "@/lib/dto";
 import { prisma } from "@/lib/prisma";
-import { gunlukTalepKotasiTuket } from "@/lib/rate-limit";
+import { gunlukTalepKotasiIadeEt, gunlukTalepKotasiTuket } from "@/lib/rate-limit";
 import { randevuTalebiSemasi } from "@/lib/schemas";
 import { publicTokenUret } from "@/lib/tokens";
 import { turnstileDogrula } from "@/lib/turnstile";
@@ -20,6 +20,10 @@ import { turnstileDogrula } from "@/lib/turnstile";
  *   5. Yazma — slot çakışması EXCLUDE kısıtıyla DB'de engellenir
  */
 export async function POST(request: NextRequest): Promise<Response> {
+  // Kota tüketildikten sonra randevu oluşturulamazsa hakkın iade edilebilmesi için
+  // catch bloğundan da erişilebilir olmalı.
+  let kotaTuketilenTelefon: string | null = null;
+
   try {
     const govde = await request.json().catch(() => {
       throw new ApiError("VALIDATION_ERROR", 400, "İstek gövdesi geçerli JSON değil.");
@@ -33,6 +37,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     );
 
     await gunlukTalepKotasiTuket(talep.customerPhone);
+    kotaTuketilenTelefon = talep.customerPhone;
 
     const isletme = await prisma.business.findUnique({
       where: { slug: talep.businessSlug },
@@ -97,8 +102,22 @@ export async function POST(request: NextRequest): Promise<Response> {
       include: APPOINTMENT_DTO_INCLUDE,
     });
 
+    // Randevu oluştu — hak gerçekten kullanıldı, iade edilmeyecek.
+    kotaTuketilenTelefon = null;
+
     return Response.json(toAppointmentDto(randevu), { status: 201 });
   } catch (error) {
+    // Telafi edici iade: randevu OLUŞMADIYSA günlük hak yanmamalı. Slot dolu,
+    // dükkan kapalı, geçmiş saat gibi retler müşterinin hatası değildir; 5 kez
+    // dolu saate denemek günlük hakkı tüketmemeli.
+    //
+    // Rate limit'in KENDİ 429'u hariç tutulur: orada sayaç zaten limitin üstünde
+    // ve iade, bir sonraki isteğin tekrar geçmesine yol açardı.
+    const rateLimitReddi = error instanceof ApiError && error.code === "RATE_LIMITED";
+    if (kotaTuketilenTelefon && !rateLimitReddi) {
+      await gunlukTalepKotasiIadeEt(kotaTuketilenTelefon);
+    }
+
     return toErrorResponse(error);
   }
 }

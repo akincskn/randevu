@@ -19,10 +19,12 @@ const yanitSemasi = z.object({
 
 /**
  * Turnstile token'ını Cloudflare'e doğrulatır.
- * Başarısızsa `ApiError(TURNSTILE_FAILED, 403)` fırlatır.
+ * Cloudflare token'ı REDDEDERSE `ApiError(TURNSTILE_FAILED, 403)` fırlatır.
  *
- * Ağ hatası/timeout da başarısızlık sayılır (fail-closed) — doğrulama yapılamadıysa
- * isteğin insan kaynaklı olduğu varsayılamaz.
+ * FAIL-OPEN (PROJECT_SPEC.md "Onaylanan Çıkarımlar", 2026-08-15 onaylı):
+ * Cloudflare'e ULAŞILAMAZSA (ağ hatası, timeout, 5xx) kontrol ATLANIR ve loglanır.
+ * "Cloudflare cevap vermedi" ile "Cloudflare bot dedi" bilinçli olarak ayrılır:
+ * birincisi bizim altyapı sorunumuz, ikincisi gerçek bir ret kararıdır.
  */
 export async function turnstileDogrula(token: string, istemciIp?: string): Promise<void> {
   const govde = new URLSearchParams({
@@ -49,18 +51,21 @@ export async function turnstileDogrula(token: string, istemciIp?: string): Promi
     }
     ham = await yanit.json();
   } catch (error) {
-    console.error("[turnstile] doğrulama çağrısı başarısız:", error);
-    throw new ApiError(
-      "TURNSTILE_FAILED",
-      403,
-      "Bot doğrulaması tamamlanamadı. Lütfen sayfayı yenileyip tekrar deneyin.",
-    );
+    console.error("[turnstile] doğrulama çağrısı başarısız, kontrol ATLANIYOR (fail-open):", error);
+    return;
   }
 
   const cozumlenen = yanitSemasi.safeParse(ham);
-  if (!cozumlenen.success || !cozumlenen.data.success) {
-    const kodlar = cozumlenen.success ? cozumlenen.data["error-codes"] : undefined;
-    console.error("[turnstile] doğrulama reddedildi:", kodlar ?? "yanıt çözümlenemedi");
+
+  // Yanıt çözümlenemedi -> Cloudflare tarafında beklenmedik bir durum, ret DEĞİL.
+  if (!cozumlenen.success) {
+    console.error("[turnstile] yanıt çözümlenemedi, kontrol ATLANIYOR (fail-open):", ham);
+    return;
+  }
+
+  // Cloudflare açıkça "bu bir bot" dedi — bu gerçek bir ret kararıdır, uygulanır.
+  if (!cozumlenen.data.success) {
+    console.error("[turnstile] doğrulama reddedildi:", cozumlenen.data["error-codes"]);
     throw new ApiError(
       "TURNSTILE_FAILED",
       403,

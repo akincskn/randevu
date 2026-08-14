@@ -141,14 +141,17 @@ model WorkingHoursException {
 ///
 /// Doğru kısıt, PostgreSQL EXCLUDE (dışlama) kısıtıdır:
 ///   businessId eşitliği + [startsAt, endsAt) yarı-açık aralığının çakışmaması (&&),
-///   yalnızca aktif (PENDING|CONFIRMED) satırlar için (partial WHERE).
+///   yalnızca slotu TUTAN satırlar için (partial WHERE). Predicate olumsuz yazılır:
+///   CANCELLED ve EXPIRED slotu bırakır; PENDING, CONFIRMED, COMPLETED, NO_SHOW tutar.
+///   Olumsuz liste fail-safe'tir — enum'a eklenen yeni bir durum, predicate güncellenmese
+///   bile varsayılan olarak slotu TUTAR (çift rezervasyon yerine fazladan katılık).
 /// Yarı-açık '[)' sınırı sayesinde BİTİŞİK randevular (10:00-10:30 ve 10:30-11:00) çakışmaz.
 ///
 /// Prisma şema dili ne EXCLUDE kısıtını ne de partial index'i İFADE EDEBİLİR. Bu yüzden kısıt
 /// burada TANIMLANMADI; migration SQL'ine ELLE eklendi (btree_gist eklentisi ile birlikte):
 ///   ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_no_overlap_excl"
 ///     EXCLUDE USING gist ("businessId" WITH =, tstzrange("startsAt","endsAt",'[)') WITH &&)
-///     WHERE ("status" IN ('PENDING','CONFIRMED'));
+///     WHERE ("status" NOT IN ('CANCELLED','EXPIRED'));
 /// tstzrange yapıcısının IMMUTABLE olabilmesi için startsAt/endsAt TIMESTAMPTZ olmak ZORUNDA
 /// (bkz. @db.Timestamptz(3)); düz TIMESTAMP ile çevrim yalnızca STABLE olur ve index kabul etmez.
 ///

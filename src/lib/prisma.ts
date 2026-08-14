@@ -22,8 +22,22 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+/**
+ * CLAUDE.md §2: "timeouts on all external calls".
+ *
+ * Sorgu zaman aşımı sürücü seviyesinde uygulanır (`statement_timeout`): Postgres
+ * sorguyu SUNUCU tarafında iptal eder. JS tarafında `Promise.race` ile beklemeyi
+ * kesmek sorguyu iptal etmez, bağlantı meşgul kalmaya devam ederdi.
+ */
+const BAGLANTI_ZAMAN_ASIMI_MS = 5_000;
+const SORGU_ZAMAN_ASIMI_MS = 10_000;
+
 function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaPg({ connectionString: serverEnv().DATABASE_URL });
+  const adapter = new PrismaPg({
+    connectionString: serverEnv().DATABASE_URL,
+    connectionTimeoutMillis: BAGLANTI_ZAMAN_ASIMI_MS,
+    statement_timeout: SORGU_ZAMAN_ASIMI_MS,
+  });
   return new PrismaClient({ adapter });
 }
 

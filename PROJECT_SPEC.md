@@ -72,3 +72,13 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   ifadesinin doğal sonucu, 2026-08-14 onaylandı
 - AppointmentStatus enum genişletmesi (EXPIRED, COMPLETED, NO_SHOW) — zaman aşımı ve
   slot-çakışma mekanizmasının önkoşulu, 2026-08-14 onaylandı
+- Fail-open dış servis politikası — Upstash veya Cloudflare Turnstile'a ULAŞILAMAZSA
+  ilgili kontrol atlanır ve loglanır; randevu akışı durmaz. Bir altyapı kesintisinin
+  dükkanın online randevusunu tamamen kapatması, kötüye kullanım riskinden daha
+  maliyetli görüldü. Cloudflare'in açık "bot" kararı ise ret olarak uygulanmaya devam
+  eder (ulaşılamama ≠ reddedilme). 503 RATE_LIMITED yanıtı kaldırıldı. 2026-08-15 onaylandı
+- Rate limit penceresi Europe/Istanbul takvim gününe göre hesaplanır, UTC'ye göre değil —
+  aksi halde pencere yerel saatle 03:00'te sıfırlanırdı. 2026-08-15 onaylandı
+- Geçmiş saate randevu engeli ve çalışma saati kontrolünün POST'ta sunucu tarafında
+  tekrarlanması — savunmacı programlama gereği, istemciden gelen saat güvenilmez kabul
+  edilir. 2026-08-15 onaylandı

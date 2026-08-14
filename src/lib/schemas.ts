@@ -61,8 +61,22 @@ export const girisSemasi = z.object({
   password: z.string().min(1, "Şifrenizi girin."),
 });
 
+/**
+ * İptal talebi — spec satır 42: müşteri, kendisine gelen linkteki `publicToken`
+ * ile iptal eder. Berber ise oturumuyla iptal eder, token göndermez.
+ */
+export const iptalSemasi = z.object({
+  publicToken: z.string().min(1).optional(),
+});
+
+/**
+ * Push aboneliği — tarayıcının `PushSubscription.toJSON()` çıktısıyla aynı şekil.
+ *
+ * `businessId` BİLEREK alınmıyor: hangi işletmeye abone olunacağı oturumdan
+ * belirlenir. İstemciden alınsaydı, herkes başkasının işletmesine abone olup
+ * o dükkanın randevu bildirimlerini dinleyebilirdi.
+ */
 export const pushAbonelikSemasi = z.object({
-  businessId: z.string().min(1),
   endpoint: z.url("Geçersiz push endpoint'i."),
   keys: z.object({
     p256dh: z.string().min(1),

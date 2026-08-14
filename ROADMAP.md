@@ -25,17 +25,29 @@ satır 43-44 (slot çakışmasının veritabanı seviyesinde engellenmesi).
 - `Service_durationMinutes_positive_check` — sıfır uzunluklu randevu boşluğunu kapatır
 - Neon'a deploy edildi ve veritabanı üzerinden doğrulandı
 
-## Faz 2 — API Routes ⬅️ SIRADAKİ
+## Faz 2 — API Routes + Minimal Auth (API-only, UI Faz 4'te) ⬅️ SIRADAKİ
 
 Spec dayanağı: satır 22-23 (randevu talebi oluşturma), satır 25-29 (onay + `wa.me` linki),
-satır 41-46 (güvenlik: rastgele token, rate limiting, bot doğrulaması), satır 36-38 (push aboneliği).
+satır 41-46 (güvenlik: rastgele token, rate limiting, bot doğrulaması), satır 36-38 (push aboneliği),
+**satır 48-49 (berber kimlik doğrulaması — yalnızca API katmanı)**.
 
-- `POST /api/appointments` — public, rate-limited (Upstash), Turnstile doğrulaması
-- `PATCH /api/appointments/[id]/confirm` — durum `CONFIRMED`, `wa.me` link üretimi
-- `PATCH /api/appointments/[id]/cancel`
+- `POST /api/appointments` — public, rate-limited (Upstash), Turnstile doğrulaması ✅
+- `POST /api/auth/register` — email + şifre (hash'li), `Business` kaydı oluşturur
+- `POST /api/auth/login` — session cookie üretir
+- Session doğrulama helper'ı — `confirm` endpoint'i bunu kullanır
+- `PATCH /api/appointments/[id]/confirm` — durum `CONFIRMED`, `wa.me` link üretimi.
+  Session'daki `businessId` ile `appointment.businessId` eşleşmelidir; eşleşmezse **403**.
+- `PATCH /api/appointments/[id]/cancel` — `publicToken` ile korunur, session gerektirmez
 - `POST /api/push/subscribe`
 
 Her route: Zod ile input doğrulama, try/catch, DTO ile yanıt (`CLAUDE.md` §2).
+
+**Auth kapsam sınırı — bu fazda YOK, Faz 4'e ait:** login/register SAYFALARI (UI),
+dashboard arayüzü, şifre sıfırlama, magic link alternatifi. Bunlar auth API'sinin üstüne biner.
+
+> Neden Faz 2'ye çekildi: `confirm` bir berber işlemidir ve kimlik doğrulaması olmadan
+> randevu ID'sini bilen herkes başkasının randevusunu onaylayabilirdi. Sıra değişikliği
+> 2026-08-15'te kullanıcı onayıyla yapıldı.
 
 ## Faz 3 — Public booking sayfası
 
@@ -47,9 +59,12 @@ Uygulama indirmeden çalışan mobil web arayüzü.
 ## Faz 4 — Dashboard
 
 Spec dayanağı: satır 14-19 (hizmet ve çalışma saati yönetimi), satır 24 (bekleyen randevular),
-satır 39 (her zaman görünür bekleyen sayısı rozeti), satır 48-49 (berber kimlik doğrulaması).
+satır 39 (her zaman görünür bekleyen sayısı rozeti), satır 48-49 (berber kimlik doğrulaması — UI katmanı).
 
 Berber girişi, randevu listesi, bekleyen rozeti, hizmet ve çalışma saati yönetimi.
+
+Auth tarafında bu faza kalanlar (API'si Faz 2'de yazıldı): login/register sayfaları,
+şifre sıfırlama, magic link alternatifi.
 
 ## Faz 5 — Push bildirimleri
 

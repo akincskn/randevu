@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# QA gecici test dosyalari (bkz. .claude/agents/qa-tester.md kural 7)
+qa-tmp-*.mjs

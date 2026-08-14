@@ -27,6 +27,9 @@ job. Your output is factual pass/fail reporting only.
    - Rate limiting: confirm a single phone number is blocked after exceeding the daily booking limit.
 6. If you cannot determine pass/fail because the environment, data, or a dependency is missing, report
    that gap exactly — do not guess an outcome.
+7. Any temporary/scratch files created during testing must be written outside the repository (e.g., a
+   system temp directory) or explicitly cleaned up before reporting completion. Never leave scratch
+   files in the repository root for the developer to accidentally commit.
 
 ## Output format
 

@@ -1,0 +1,210 @@
+// Randevu — Berber/Kuaför Randevu Sistemi
+// Bu şema YALNIZCA PROJECT_SPEC.md "v1 Kapsamı" (satır 12-50) bölümünü modeller.
+// "v1 Kapsam DIŞI" (satır 52-59) ve "v2 / Ertelenen kararlar" (satır 61-66) hiçbir şekilde
+// modellenmez: owner/staff hiyerarşisi (63-64), online ödeme (56-57), SMS (58), AI (54) YOK.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Prisma 7 BREAKING CHANGE: `url` / `directUrl` artık schema.prisma içinde DESTEKLENMİYOR
+// (hata P1012: "The datasource property `url` is no longer supported in schema files").
+// Bağlantı URL'leri repo kökündeki `prisma.config.ts` dosyasına taşındı:
+//   - migration/introspection -> DIRECT_URL (Neon direct bağlantı)
+//   - runtime PrismaClient    -> DATABASE_URL (Neon pooled) driver adapter üzerinden
+datasource db {
+  provider = "postgresql"
+}
+
+// Spec satır 16: "BERBER / KUAFOR — ileride genişletilebilir enum"
+enum Sector {
+  BERBER
+  KUAFOR
+}
+
+// Spec satır 23 (PENDING), 26 (CONFIRMED), 35 + 42 (iptal -> CANCELLED).
+// Slot'u TUTAN (aktif) ve BIRAKAN durumlar ayrımı kritiktir — Appointment üzerindeki
+// EXCLUDE kısıtının WHERE predicate'i bu ayrıma dayanır (bkz. migration.sql).
+enum AppointmentStatus {
+  // --- Slot'u TUTAR ---
+  PENDING // spec satır 23: müşteri talep etti, berber henüz onaylamadı
+  CONFIRMED // spec satır 26: berber onayladı
+  COMPLETED // randevu gerçekleşti — geçmiş kayıt, o saat fiilen doluydu
+  NO_SHOW // müşteri gelmedi — saat yine de tutulmuştu, istatistik için ayrı tutulur
+
+  // --- Slot'u BIRAKIR (saat tekrar satılabilir) ---
+  CANCELLED // müşteri veya berber tarafından iptal
+  EXPIRED // spec satır 32-35: çalışma saatine göre hesaplanan zaman aşımı.
+  // CANCELLED'dan AYRI tutulur: "berber onaylamadı" ile "taraflardan biri
+  // iptal etti" farklı olaylardır; zaman aşımı ölçümü ancak böyle raporlanabilir.
+}
+
+/// İşletme — spec satır 14-16 (kayıt bilgileri) + satır 49 (berber kimlik doğrulaması).
+/// Spec satır 10: her berber kendi bağımsız işletmesi; owner/staff hiyerarşisi YOK (v2, satır 63-64).
+model Business {
+  id String @id @default(cuid())
+
+  // Spec satır 22: müşteri "işletmenin public linkinden" giriyor.
+  // STRUCTURE.md satır 22: /(public)/[businessSlug] — public link tanımlayıcısı.
+  slug String @unique
+
+  name    String // spec satır 15: isim
+  phone   String // spec satır 15: WhatsApp onay mesajlarının gönderileceği numara
+  address String? // spec satır 15: opsiyonel adres
+  sector  Sector // spec satır 15-16
+
+  // Spec satır 49: "basit email/şifre veya magic link. SMS OTP YOK."
+  // passwordHash nullable: magic link ile giren hesapta şifre olmayabilir.
+  email        String  @unique
+  passwordHash String?
+
+  // IANA saat dilimi adı. WorkingHours / WorkingHoursException YEREL DUVAR SAATİ tutar
+  // (ör. 09:00); bu değerler mutlak (TIMESTAMPTZ) zamana çevrilirken bu alan kullanılır.
+  // Hedef kitle Türkiye esnafı olduğu için varsayılan Europe/Istanbul.
+  timezone String @default("Europe/Istanbul")
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  services          Service[]
+  workingHours      WorkingHours[]
+  hoursExceptions   WorkingHoursException[]
+  appointments      Appointment[]
+  pushSubscriptions PushSubscription[]
+}
+
+/// Hizmet — spec satır 17: "isim, süre (dakika), opsiyonel fiyat (bilgi amaçlı, online ödeme YOK)".
+model Service {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  name            String
+  durationMinutes Int // spec satır 17: süre (dakika)
+  price           Decimal? @db.Decimal(10, 2) // spec satır 17: opsiyonel, SADECE bilgi amaçlı
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  appointments Appointment[]
+
+  @@index([businessId])
+}
+
+/// Çalışma saatleri — spec satır 18: "haftalık tekrar eden (gün bazlı açık/kapalı + saat aralığı)".
+/// Saatler gece yarısından itibaren dakika (0-1439) olarak tutulur; tarih/timezone taşımaz.
+/// BU DEĞERLER YEREL DUVAR SAATİDİR (kasten): "dükkan 09:00'da açar" ifadesi yaz/kış saati
+/// veya tz kuralı değişse bile 09:00 kalmalıdır. Mutlak (TIMESTAMPTZ) zamana çevrim
+/// `Business.timezone` (IANA) kullanılarak uygulama katmanında yapılır — slot üretimi ve
+/// spec satır 32-35'teki çalışma-saati-farkındalıklı zaman aşımı hesabı bu çevrime dayanır.
+/// isOpen=false ise opensAtMinute/closesAtMinute null'dır.
+model WorkingHours {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  dayOfWeek      Int // 0=Pazar ... 6=Cumartesi
+  isOpen         Boolean @default(true)
+  opensAtMinute  Int?
+  closesAtMinute Int?
+
+  @@unique([businessId, dayOfWeek])
+}
+
+/// Çalışma saati istisnası — spec satır 19: "tekil gün bazlı kapatma/özel saat (bayram, izin günü)".
+/// isClosed=true ise o gün tamamen kapalı; false ise opensAtMinute/closesAtMinute o güne özel saattir.
+/// `date` bir TAKVİM GÜNÜdür (DATE, mutlak an değil) ve saatler YEREL DUVAR SAATİDİR — ikisi de
+/// `Business.timezone` ile yorumlanır. Bu yüzden TIMESTAMPTZ'e çevrilmediler (kasten).
+model WorkingHoursException {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  date           DateTime @db.Date
+  isClosed       Boolean  @default(true)
+  opensAtMinute  Int?
+  closesAtMinute Int?
+
+  @@unique([businessId, date])
+}
+
+/// Randevu — spec satır 21-31 (akış), 42 (rastgele token), 43-44 (slot çakışma koruması), 50 (müşteri hesabı yok).
+///
+/// KRİTİK — SLOT ÇAKIŞMA KORUMASI (spec satır 43-44):
+/// Spec, iki müşterinin aynı saati almasının VERİTABANI seviyesinde engellenmesini istiyor.
+///
+/// Naif çözüm `@@unique([businessId, startsAt])` olurdu; İKİ AYRI nedenle YETERSİZ:
+///   1) Koşulsuz unique, iptal edilmiş (CANCELLED) randevunun da slotu sonsuza kadar
+///      bloklamasına yol açar — iptal edilen saat bir daha hiç satılamaz.
+///   2) Daha kötüsü, yalnızca AYNI başlangıç saatini engeller. 10:00 (60 dk) randevusu
+///      varken 10:30 randevusu DB düzeyinden geçerdi — gerçek ARALIK çakışması korumasız kalır.
+///
+/// Doğru kısıt, PostgreSQL EXCLUDE (dışlama) kısıtıdır:
+///   businessId eşitliği + [startsAt, endsAt) yarı-açık aralığının çakışmaması (&&),
+///   yalnızca aktif (PENDING|CONFIRMED) satırlar için (partial WHERE).
+/// Yarı-açık '[)' sınırı sayesinde BİTİŞİK randevular (10:00-10:30 ve 10:30-11:00) çakışmaz.
+///
+/// Prisma şema dili ne EXCLUDE kısıtını ne de partial index'i İFADE EDEBİLİR. Bu yüzden kısıt
+/// burada TANIMLANMADI; migration SQL'ine ELLE eklendi (btree_gist eklentisi ile birlikte):
+///   ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_no_overlap_excl"
+///     EXCLUDE USING gist ("businessId" WITH =, tstzrange("startsAt","endsAt",'[)') WITH &&)
+///     WHERE ("status" IN ('PENDING','CONFIRMED'));
+/// tstzrange yapıcısının IMMUTABLE olabilmesi için startsAt/endsAt TIMESTAMPTZ olmak ZORUNDA
+/// (bkz. @db.Timestamptz(3)); düz TIMESTAMP ile çevrim yalnızca STABLE olur ve index kabul etmez.
+///
+/// Bu kısıt Prisma'nın bildiği şemanın DIŞINDADIR: ileride `prisma migrate diff` alırken
+/// veya yeni migration üretirken KORUNDUĞUNDAN emin olun (drift olarak görünebilir).
+/// Uygulama tarafında randevu oluşturma bir transaction içinde yapılmalı ve bu kısıtın
+/// ihlali (Postgres 23P01 exclusion_violation) "slot dolu" olarak ele alınmalıdır.
+/// DİKKAT: 23P01, unique ihlalinin (23505) aksine Prisma'da P2002'ye eşlenmez —
+/// ham hata koduna bakılmalıdır.
+model Appointment {
+  id String @id @default(cuid())
+
+  // Spec satır 42: detay/iptal linkleri sıralı ID değil, kriptografik rastgele token kullanır.
+  // Değer uygulama tarafında crypto.randomBytes ile üretilir; DB varsayılanı yoktur.
+  publicToken String @unique
+
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // Spec satır 22: müşteri hizmet seçer. Randevusu olan hizmet silinemez (Restrict).
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  // Spec satır 23 + 50: müşteri hesabı yok; ad ve telefon randevunun ÜSTÜNDE tutulur.
+  customerName  String
+  customerPhone String
+
+  // Mutlak anlar -> TIMESTAMPTZ. EXCLUDE kısıtındaki tstzrange'in IMMUTABLE olması buna bağlı.
+  startsAt DateTime @db.Timestamptz(3) // spec satır 22: seçilen uygun saat
+  endsAt   DateTime @db.Timestamptz(3) // hizmet süresinden (Service.durationMinutes) hesaplanır
+
+  status AppointmentStatus @default(PENDING) // spec satır 23, 26, 35
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3) // spec satır 32-35: zaman aşımı hesabının başlangıcı
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  // Panel listeleri (spec satır 24, 39) ve zaman aşımı taraması (satır 32-35) için.
+  @@index([businessId, status])
+  @@index([businessId, startsAt])
+}
+
+/// Web Push aboneliği — spec satır 36-38: VAPID, ücretsiz, Firebase YOK.
+/// Yeni randevu talebinde anında bildirim + günlük özet bildirimi berbere gönderilir.
+model PushSubscription {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  endpoint String @unique // Push servisinin döndürdüğü benzersiz endpoint URL'i
+  p256dh   String // PushSubscription.getKey('p256dh')
+  auth     String // PushSubscription.getKey('auth')
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([businessId])
+}
+
+// NOT: Rate limiting (spec satır 45, Upstash Redis) ve bot doğrulaması (satır 46, Turnstile)
+// veritabanı modeli GEREKTİRMEZ — bu yüzden bilinçli olarak model yazılmadı.

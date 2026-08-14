@@ -64,3 +64,11 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   berber kendi bağımsız "Business" kaydı — talep gelirse v2'de eklenecek.
 - Toplu WhatsApp onay gönderimi (günün tüm onaylarını sırayla açan kısayol).
 - Reklam / freemium ücretli katman modeli.
+
+## Onaylanan Çıkarımlar (spec'te lafzen yok, kullanıcı onayıyla eklendi)
+
+- Business.slug — public booking link için gerekli, 2026-08-14 onaylandı
+- Business.email, Business.passwordHash — spec satır 49'daki "email/şifre veya magic link"
+  ifadesinin doğal sonucu, 2026-08-14 onaylandı
+- AppointmentStatus enum genişletmesi (EXPIRED, COMPLETED, NO_SHOW) — zaman aşımı ve
+  slot-çakışma mekanizmasının önkoşulu, 2026-08-14 onaylandı

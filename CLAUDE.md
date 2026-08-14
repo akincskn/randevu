@@ -20,7 +20,9 @@ No agent may deviate from these rules without explicit written approval from the
 
 ## 1. Stack
 
-- Next.js 14+ (App Router), TypeScript strict mode
+- Next.js 16.3.1 (installed — verify exact version with package.json before writing code;
+  do not assume Next.js 14 APIs). Always check node_modules/next/dist/docs/ or official docs
+  for version-specific behavior. App Router, TypeScript strict mode
 - Prisma + Neon PostgreSQL
 - Upstash Redis (rate limiting, caching)
 - Web Push API (VAPID) for notifications — no Firebase, no paid push service
@@ -37,6 +39,8 @@ No agent may deviate from these rules without explicit written approval from the
 - SOLID / DRY / KISS. If a function is doing two things, split it.
 - TypeScript strict mode, no `any`. If a type is genuinely unknown, use `unknown` and narrow it.
 - 200-line max per file. If a file grows past this, split it before continuing.
+  This limit applies to hand-authored application code under src/. It does not apply to
+  prisma/schema.prisma or generated migration SQL.
 - Conventional commits (`feat:`, `fix:`, `chore:`, `refactor:`, `test:`) on every commit.
 - Build and test after every feature is implemented — never batch multiple unverified features together.
 - Every unguessable public identifier (appointment detail/cancel links) uses a cryptographically random
@@ -47,7 +51,7 @@ No agent may deviate from these rules without explicit written approval from the
 ## 3. Repository conventions
 
 - See `STRUCTURE.md` for the required folder layout. Do not deviate from it without approval.
-- See `schema.prisma` for the current source-of-truth data model. Schema changes require a migration
+- See `prisma/schema.prisma` for the current source-of-truth data model. Schema changes require a migration
   file and an explanation of why the change is necessary, tied to a spec requirement.
 - See `PROJECT_SPEC.md` for full product scope — v1 in-scope, v1 explicitly out-of-scope, and v2 deferred
   items. Do not implement anything listed under "v2 / Deferred."

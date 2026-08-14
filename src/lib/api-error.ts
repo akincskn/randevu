@@ -37,24 +37,47 @@ const PG_EXCLUSION_VIOLATION = "23P01";
  * Slot çakışmasını tespit eder.
  *
  * EXCLUDE kısıtı ihlali Postgres'te 23P01 döner. Unique ihlalinin (23505) aksine
- * bu kod Prisma'da P2002'ye EŞLENMEZ — ham hata koduna bakmak zorundayız.
- * Hata nesnesinin şekli adapter katmanına göre değiştiği için birkaç olası
- * konumun tamamı denenir.
+ * bu kod Prisma'da P2002'ye EŞLENMEZ.
+ *
+ * Prisma 7 + @prisma/adapter-pg'de hata zinciri şudur (kaynak koddan doğrulandı):
+ *   pg DatabaseError{code:"23P01"}
+ *     -> adapter: DriverAdapterError{cause:{kind:"postgres", originalCode:"23P01"}}
+ *     -> client: PrismaClientKnownRequestError{code:"P2039",
+ *                meta:{driverAdapterError: <yukarıdaki>}}
+ *
+ * Yani DIŞ koda (`error.code`) bakmak YETMEZ — orada "P2039" vardır. Gerçek
+ * Postgres kodu `meta.driverAdapterError.cause.originalCode` altındadır.
+ * Bu yol sürüm yükseltmelerinde değişebileceği için son çare olarak hata
+ * mesajındaki `23P01` metni de kontrol edilir (client bu kodu mesaja gömer).
  */
 export function isSlotConflict(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
 
   const aday = error as {
     code?: unknown;
-    meta?: { code?: unknown };
-    cause?: { code?: unknown };
+    message?: unknown;
+    meta?: { driverAdapterError?: { cause?: { code?: unknown; originalCode?: unknown } } };
+    cause?: { code?: unknown; originalCode?: unknown };
   };
 
-  return (
-    aday.code === PG_EXCLUSION_VIOLATION ||
-    aday.meta?.code === PG_EXCLUSION_VIOLATION ||
-    aday.cause?.code === PG_EXCLUSION_VIOLATION
-  );
+  const surucuHatasi = aday.meta?.driverAdapterError?.cause;
+  if (
+    surucuHatasi?.originalCode === PG_EXCLUSION_VIOLATION ||
+    surucuHatasi?.code === PG_EXCLUSION_VIOLATION
+  ) {
+    return true;
+  }
+
+  // Adapter'ın kendi hatası doğrudan yakalanırsa (client sarmalamadan önce).
+  if (
+    aday.cause?.originalCode === PG_EXCLUSION_VIOLATION ||
+    aday.cause?.code === PG_EXCLUSION_VIOLATION ||
+    aday.code === PG_EXCLUSION_VIOLATION
+  ) {
+    return true;
+  }
+
+  return typeof aday.message === "string" && aday.message.includes(PG_EXCLUSION_VIOLATION);
 }
 
 /**

@@ -25,22 +25,29 @@ satır 43-44 (slot çakışmasının veritabanı seviyesinde engellenmesi).
 - `Service_durationMinutes_positive_check` — sıfır uzunluklu randevu boşluğunu kapatır
 - Neon'a deploy edildi ve veritabanı üzerinden doğrulandı
 
-## Faz 2 — API Routes + Minimal Auth (API-only, UI Faz 4'te) ⬅️ SIRADAKİ
+## Faz 2 — API Routes + Minimal Auth (API-only, UI Faz 4'te) ✅ TAMAMLANDI
 
 Spec dayanağı: satır 22-23 (randevu talebi oluşturma), satır 25-29 (onay + `wa.me` linki),
 satır 41-46 (güvenlik: rastgele token, rate limiting, bot doğrulaması), satır 36-38 (push aboneliği),
 **satır 48-49 (berber kimlik doğrulaması — yalnızca API katmanı)**.
 
-- `POST /api/appointments` — public, rate-limited (Upstash), Turnstile doğrulaması ✅
-- `POST /api/auth/register` — email + şifre (hash'li), `Business` kaydı oluşturur
-- `POST /api/auth/login` — session cookie üretir
-- Session doğrulama helper'ı — `confirm` endpoint'i bunu kullanır
-- `PATCH /api/appointments/[id]/confirm` — durum `CONFIRMED`, `wa.me` link üretimi.
+- ✅ `POST /api/appointments` — public, rate-limited (Upstash), Turnstile doğrulaması
+- ✅ `POST /api/auth/register` — email + şifre (scrypt hash'li), `Business` kaydı oluşturur
+- ✅ `POST /api/auth/login` — HMAC imzalı session cookie üretir
+- ✅ Session doğrulama helper'ı (`src/lib/session.ts`) — `confirm` ve `push/subscribe` kullanır
+- ✅ `PATCH /api/appointments/[id]/confirm` — durum `CONFIRMED`, `wa.me` link üretimi.
   Session'daki `businessId` ile `appointment.businessId` eşleşmelidir; eşleşmezse **403**.
-- `PATCH /api/appointments/[id]/cancel` — `publicToken` ile korunur, session gerektirmez
-- `POST /api/push/subscribe`
+- ✅ `PATCH /api/appointments/[id]/cancel` — müşteri `publicToken` ile, berber session ile
+- ✅ `POST /api/push/subscribe` — `businessId` gövdeden değil session'dan alınır
 
 Her route: Zod ile input doğrulama, try/catch, DTO ile yanıt (`CLAUDE.md` §2).
+
+Doğrulama durumu: `npm run build` ve `npx eslint src` temiz. Üç tur qa-tester doğrulaması
+yapıldı; slot çakışmasının **409 SLOT_TAKEN** döndürdüğü canlı Neon'da eşzamanlı isteklerle
+kanıtlandı. Bulunan dört hata düzeltildi ve yeniden doğrulandı: `isSlotConflict`'in yanlış
+hata alanına bakması (6a9207d), rate limit sayacının negatife düşüp limiti bypass etmesi,
+`login`'de 45 ms'lik hesap numaralandırma sızıntısı, `push/subscribe`'da abonelik ele
+geçirme (728b3dc).
 
 **Auth kapsam sınırı — bu fazda YOK, Faz 4'e ait:** login/register SAYFALARI (UI),
 dashboard arayüzü, şifre sıfırlama, magic link alternatifi. Bunlar auth API'sinin üstüne biner.
@@ -49,12 +56,17 @@ dashboard arayüzü, şifre sıfırlama, magic link alternatifi. Bunlar auth API
 > randevu ID'sini bilen herkes başkasının randevusunu onaylayabilirdi. Sıra değişikliği
 > 2026-08-15'te kullanıcı onayıyla yapıldı.
 
-## Faz 3 — Public booking sayfası
+## Faz 3 — Public booking sayfası ⬅️ SIRADAKİ
 
 Spec dayanağı: satır 22 (hizmet seçimi, uygun saatlerin gösterimi, ad + telefon ile talep),
 satır 30 (müşteri randevu detay ekranı), satır 46 (Turnstile).
 
 Uygulama indirmeden çalışan mobil web arayüzü.
+
+> Bilinen ön koşul: MÜSAİT SLOT ÜRETECİ henüz yazılmadı. `src/lib/availability.ts` verilen
+> bir saatin çalışma saatleri içinde olup olmadığını DOĞRULAR, ancak "bu gün için müsait
+> saatler hangileri" sorusunu cevaplamaz. Spec satır 22 "uygun saati görür" dediği için
+> Faz 3, mevcut randevuları da hesaba katan bir slot üreteci gerektirir.
 
 ## Faz 4 — Dashboard
 

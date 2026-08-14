@@ -4,7 +4,11 @@ import { ApiError, toErrorResponse } from "@/lib/api-error";
 import { randevuCalismaSaatiIcindeMi, yerelAnHesapla } from "@/lib/availability";
 import { APPOINTMENT_DTO_INCLUDE, toAppointmentDto } from "@/lib/dto";
 import { prisma } from "@/lib/prisma";
-import { gunlukTalepKotasiIadeEt, gunlukTalepKotasiTuket } from "@/lib/rate-limit";
+import {
+  gunlukTalepKotasiIadeEt,
+  gunlukTalepKotasiTuket,
+  kotaAsimiHatasi,
+} from "@/lib/rate-limit";
 import { randevuTalebiSemasi } from "@/lib/schemas";
 import { publicTokenUret } from "@/lib/tokens";
 import { turnstileDogrula } from "@/lib/turnstile";
@@ -36,8 +40,15 @@ export async function POST(request: NextRequest): Promise<Response> {
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
     );
 
-    await gunlukTalepKotasiTuket(talep.customerPhone);
-    kotaTuketilenTelefon = talep.customerPhone;
+    const kota = await gunlukTalepKotasiTuket(talep.customerPhone);
+    // İade YALNIZCA sayaç gerçekten arttıysa yapılabilir. Fail-open durumunda
+    // artmadığı için iade edilirse sayaç negatife düşer ve limit bypass'ı doğar.
+    if (kota.artirildiMi) {
+      kotaTuketilenTelefon = talep.customerPhone;
+    }
+    if (!kota.izinVerildi) {
+      throw kotaAsimiHatasi();
+    }
 
     const isletme = await prisma.business.findUnique({
       where: { slug: talep.businessSlug },

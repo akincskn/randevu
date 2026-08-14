@@ -21,9 +21,21 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const abonelik = pushAbonelikSemasi.parse(govde);
 
-    // upsert: tarayıcı aynı endpoint'i yeniden gönderebilir (sayfa her açılışında
-    // subscribe çağrılır). `endpoint` unique olduğu için mükerrer kayıt yerine
-    // güncelleme yapılır; anahtarlar döndüğünde de yeni değerler yazılır.
+    const mevcut = await prisma.pushSubscription.findUnique({
+      where: { endpoint: abonelik.endpoint },
+      select: { businessId: true },
+    });
+
+    // Endpoint BAŞKA bir işletmeye bağlıysa devir meşrudur: aynı cihazda A berberi
+    // çıkıp B giriş yaptığında tarayıcı aynı endpoint'i üretir. Ancak eski kayıt
+    // GÜNCELLENMEZ, SİLİNİP yeniden oluşturulur — böylece A'nın anahtarlarıyla
+    // B'nin anahtarları aynı satırda karışmaz ve devir createdAt'ten izlenebilir.
+    if (mevcut && mevcut.businessId !== businessId) {
+      await prisma.pushSubscription.delete({ where: { endpoint: abonelik.endpoint } });
+    }
+
+    // Aynı işletme tekrar gönderirse (sayfa her açılışında subscribe çağrılır)
+    // mükerrer kayıt yerine anahtarlar güncellenir.
     const kayit = await prisma.pushSubscription.upsert({
       where: { endpoint: abonelik.endpoint },
       create: {
@@ -33,7 +45,6 @@ export async function POST(request: NextRequest): Promise<Response> {
         auth: abonelik.keys.auth,
       },
       update: {
-        businessId,
         p256dh: abonelik.keys.p256dh,
         auth: abonelik.keys.auth,
       },

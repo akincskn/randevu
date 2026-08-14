@@ -28,7 +28,8 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Hesap yok ile şifre yanlış AYNI yanıtı döner: aksi halde bu uç, hangi
     // e-postaların kayıtlı olduğunu sızdıran bir hesap numaralandırma aracına dönüşür.
-    // sifreDogrula, isletme null olsa bile çağrılır ki yanıt süresi de ayrım yaratmasın.
+    // Süre farkı da kapatılır: sifreDogrula, hash null olsa bile sabit maliyetli
+    // sahte bir hash'e karşı scrypt çalıştırır, erken dönmez (bkz. password.ts).
     if (!isletme || !gecerli) {
       throw new ApiError("UNAUTHORIZED", 401, "E-posta veya şifre hatalı.");
     }

@@ -90,9 +90,23 @@ tek tek ölçüldü (PENDING/CONFIRMED/COMPLETED/NO_SHOW slotu tutar; CANCELLED/
 doğrulandı** (Cloudflare test anahtarlarıyla): 403 `TURNSTILE_FAILED`, randevu oluşmadı, widget
 sıfırlandı. Faz 2 regresyonu (günlük 5 talep limiti, kota iadesinin negatife düşmemesi) korundu.
 
-> Test edilmeyen iki dal (tahmin üretilmedi): `read-limit.ts`'in dakikada 120 sınırı hiç
-> tetiklenmedi; Turnstile'ın ULAŞILAMAMA (fail-open) dalı, Cloudflare erişimini kesme yolu
-> olmadığı için denenemedi. Faz 7 uçtan uca QA'da ele alınmalı.
+> Turnstile ULAŞILAMAMA (fail-open) dalı — 2026-08-15 tarihinde, geliştirme makinesindeki
+> bir internet kesintisi sırasında KAZARA DOĞRULANDI. qa-tester bu dalı Cloudflare erişimini
+> kasıtlı kesme yolu olmadığı için test edememişti. Sunucu logu:
+>
+> ```
+> [turnstile] doğrulama çağrısı başarısız, kontrol ATLANIYOR (fail-open): TypeError: fetch failed
+>     at async turnstileDogrula (src\lib\turnstile.ts:42:19)
+> ```
+>
+> Yani Cloudflare'e ulaşılamadığında kontrol gerçekten ATLANIYOR, loglanıyor ve akış
+> durmuyor — PROJECT_SPEC.md "Onaylanan Çıkarımlar" (2026-08-15) fail-open politikasının
+> beklediği davranış. Doğrulamanın SINIRI: aynı kesintide Neon'a da ulaşılamadığı için
+> (`P1001`) istek sonunda 500 döndü. Kanıtlanan şey "Turnstile kontrolü atlandı ve akış
+> devam etti"dir; kesintisiz bir ortamda 201 ile bittiği AYRICA doğrulanmalı.
+>
+> Hâlâ test edilmemiş (tahmin üretilmedi): `read-limit.ts`'in dakikada 120 sınırı hiç
+> tetiklenmedi. Faz 7 uçtan uca QA'da ele alınmalı.
 
 ## Faz 4 — Dashboard
 

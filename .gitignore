@@ -42,3 +42,6 @@ next-env.d.ts
 
 # QA gecici test dosyalari (bkz. .claude/agents/qa-tester.md kural 7)
 qa-tmp-*.mjs
+
+# Geçici QA fixture'ları (Faz 3) — uygulama kodu değil
+.tmp-qa/

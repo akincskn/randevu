@@ -41,6 +41,31 @@ export const randevuTalebiSemasi = z.object({
 
 export type RandevuTalebi = z.infer<typeof randevuTalebiSemasi>;
 
+/**
+ * Müsaitlik sorgusu — `GET /api/availability?businessId=&serviceId=&date=`.
+ *
+ * `date` bir TAKVİM GÜNÜdür (işletmenin yerel takvimine göre), mutlak an değil:
+ * "5 Eylül'de hangi saatler boş?" sorusunun saat dilimi bileşeni yoktur, cevabı
+ * vardır. Ufuk (kaç gün ileri) kontrolü burada değil route'ta yapılır — sınır
+ * işletmenin BUGÜN'üne göre hesaplanır ve o da `Business.timezone` gerektirir.
+ */
+export const musaitlikSorgusuSemasi = z.object({
+  businessId: z.string().min(1, "İşletme belirtilmedi."),
+  serviceId: z.string().min(1, "Hizmet seçilmedi."),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Tarih YYYY-AA-GG biçiminde olmalı.")
+    // Regex takvimi bilmez: 2026-02-31 biçimsel olarak geçerlidir ama böyle bir
+    // gün yoktur. Date.UTC ile normalize edip geri yazıma karşı doğrulanır.
+    .refine((deger) => {
+      const [yil, ay, gun] = deger.split("-").map(Number);
+      const an = new Date(Date.UTC(yil, ay - 1, gun));
+      return (
+        an.getUTCFullYear() === yil && an.getUTCMonth() === ay - 1 && an.getUTCDate() === gun
+      );
+    }, "Böyle bir takvim günü yok."),
+});
+
 /** Spec satır 15-16: isim, telefon, opsiyonel adres, sektör + satır 49: email/şifre. */
 export const kayitSemasi = z.object({
   name: z.string().trim().min(2, "İşletme adını girin.").max(100),

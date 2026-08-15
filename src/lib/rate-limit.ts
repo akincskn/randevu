@@ -1,8 +1,6 @@
-import { Redis } from "@upstash/redis";
-
-import { yerelAnHesapla } from "./availability";
+import { yerelAnHesapla } from "./timezone";
 import { ApiError } from "./api-error";
-import { serverEnv } from "./env";
+import { redis, REDIS_ZAMAN_ASIMI_MS, SAYAC_SCRIPT } from "./redis";
 import { withTimeout } from "./timeout";
 
 /**
@@ -10,7 +8,6 @@ import { withTimeout } from "./timeout";
  */
 const GUNLUK_TALEP_LIMITI = 5;
 const GUN_SANIYE = 24 * 60 * 60;
-const REDIS_ZAMAN_ASIMI_MS = 3_000;
 
 /**
  * Pencere, işletmenin faaliyet gösterdiği takvim gününe göre hesaplanır
@@ -20,24 +17,6 @@ const REDIS_ZAMAN_ASIMI_MS = 3_000;
  * 02:00'de 5, 03:05'te 5 talep daha atabilirdi.
  */
 const PENCERE_TIMEZONE = "Europe/Istanbul";
-
-/**
- * INCR + EXPIRE'ı TEK atomik adımda yapar.
- *
- * İki ayrı çağrı kullanılsaydı, `incr` başarılı olup `expire` düştüğünde anahtar
- * TTL'siz kalır ve o telefon numarası KALICI olarak engellenirdi. Lua script'i
- * Redis'te bölünmeden çalışır; ya ikisi de olur ya hiçbiri.
- *
- * `PEXPIRE ... NX` yerine TTL kontrolü elle yapılır: NX seçeneği eski Redis
- * sürümlerinde yoktur ve Upstash uyumluluğu garanti değildir.
- */
-const SAYAC_SCRIPT = `
-  local sayac = redis.call('INCR', KEYS[1])
-  if redis.call('TTL', KEYS[1]) < 0 then
-    redis.call('EXPIRE', KEYS[1], ARGV[1])
-  end
-  return sayac
-`;
 
 /**
  * Telafi iadesi — TABAN GÜVENLİKLİ decrement.
@@ -57,18 +36,6 @@ const IADE_SCRIPT = `
   end
   return sayac
 `;
-
-let cachedRedis: Redis | null = null;
-
-function redis(): Redis {
-  if (cachedRedis) return cachedRedis;
-  const env = serverEnv();
-  cachedRedis = new Redis({
-    url: env.UPSTASH_REDIS_REST_URL,
-    token: env.UPSTASH_REDIS_REST_TOKEN,
-  });
-  return cachedRedis;
-}
 
 function gunlukAnahtar(telefon: string): string {
   const gun = yerelAnHesapla(new Date(), PENCERE_TIMEZONE).isoGun;

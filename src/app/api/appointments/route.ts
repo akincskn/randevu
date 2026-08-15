@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { ApiError, toErrorResponse } from "@/lib/api-error";
-import { randevuCalismaSaatiIcindeMi, yerelAnHesapla } from "@/lib/availability";
+import { randevuCalismaSaatiIcindeMi } from "@/lib/availability";
+import { yerelAnHesapla } from "@/lib/timezone";
 import { APPOINTMENT_DTO_INCLUDE, toAppointmentDto } from "@/lib/dto";
 import { prisma } from "@/lib/prisma";
 import {

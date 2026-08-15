@@ -82,3 +82,13 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
 - Geçmiş saate randevu engeli ve çalışma saati kontrolünün POST'ta sunucu tarafında
   tekrarlanması — savunmacı programlama gereği, istemciden gelen saat güvenilmez kabul
   edilir. 2026-08-15 onaylandı
+- `GET /api/appointments/token/[token]` yanıtı iç `Appointment.id` alanını da döndürür —
+  müşteri detay ekranındaki iptal butonu `PATCH /api/appointments/[id]/cancel` çağırıyor ve
+  o endpoint id'yi path'te bekliyor. Bu yanıtı yalnızca `publicToken`'ı bilen alır ve iptal
+  aynı token'ı ayrıca doğrular; id tek başına hiçbir yetki taşımaz, `publicToken` id'den
+  türetilebilir değildir (spec satır 42 korunur). 2026-08-15 onaylandı
+- Turnstile widget'ı İSTEMCİDE yüklenemezse (reklam engelleyici, CDN erişimi yok) gönderim
+  KİLİTLİ kalır ve kullanıcıya görünür bir hata gösterilir. Sunucu tarafı fail-open
+  politikası (yukarıdaki madde) burada GEÇERLİ DEĞİLDİR: "Cloudflare'e ulaşamadık" bizim
+  altyapı sorunumuzdur ve atlanabilir, ancak "istemci hiç doğrulama yapmadı" bot korumasının
+  tamamen devre dışı kalması demektir. Sessiz kilitlenme yasak. 2026-08-15 onaylandı

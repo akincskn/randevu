@@ -1,72 +1,17 @@
 import type { WorkingHours, WorkingHoursException } from "@prisma/client";
 
-/**
- * Mutlak zaman (TIMESTAMPTZ) ile işletmenin yerel duvar saati arasındaki köprü.
- *
- * Veritabanında `Appointment.startsAt` mutlak bir andır; `WorkingHours` ise gece
- * yarısından itibaren dakika cinsinden YEREL duvar saatidir. İkisini birbirine
- * çevirmek için `Business.timezone` (IANA adı) gerekir — bu yüzden o alan zorunlu.
- */
-export interface YerelAn {
-  /** ISO takvim günü, işletmenin yerel saatine göre (YYYY-MM-DD). */
-  isoGun: string;
-  /** Haftanın günü — 0=Pazar ... 6=Cumartesi, Prisma şemasındaki dayOfWeek ile aynı. */
-  haftaninGunu: number;
-  /** Gece yarısından itibaren dakika (0-1439). */
-  dakika: number;
-}
-
-const HAFTA_GUNU_INDEKS: Record<string, number> = {
-  Sun: 0,
-  Mon: 1,
-  Tue: 2,
-  Wed: 3,
-  Thu: 4,
-  Fri: 5,
-  Sat: 6,
-};
+import { yerelAnHesapla } from "./timezone";
 
 /**
- * Mutlak bir anı, verilen IANA saat diliminde yerel gün + dakikaya çevirir.
+ * Çalışma saati kuralları — spec satır 18-19.
  *
- * `Intl.DateTimeFormat` kullanılır: yaz saati geçişlerini ve tarihî offset
- * değişikliklerini IANA veritabanından okur. Elle offset hesabı yapılmaz —
- * Türkiye 2016'da kalıcı UTC+3'e geçti, sabit offset varsaymak eski tarihli
- * kayıtlarda yanlış sonuç verir.
+ * Saat dilimi çevrimi burada DEĞİL `timezone.ts`'tedir (CLAUDE.md §2, 200 satır
+ * sınırı ve tek sorumluluk): bu modül "hangi saatler açık?" sorusuna bakar,
+ * o modül "bu mutlak an yerelde kaça denk geliyor?" sorusuna.
  */
-export function yerelAnHesapla(an: Date, timezone: string): YerelAn {
-  const parcalar = new Intl.DateTimeFormat("en-US", {
-    timeZone: timezone,
-    weekday: "short",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).formatToParts(an);
-
-  const al = (tip: Intl.DateTimeFormatPartTypes): string =>
-    parcalar.find((p) => p.type === tip)?.value ?? "";
-
-  // hour12:false bazı ortamlarda gece yarısını "24" olarak verir; 0'a normalize et.
-  const saat = Number(al("hour")) % 24;
-  const dakika = Number(al("minute"));
-  const haftaninGunu = HAFTA_GUNU_INDEKS[al("weekday")];
-
-  if (haftaninGunu === undefined || Number.isNaN(saat) || Number.isNaN(dakika)) {
-    throw new Error(`Saat dilimi çözümlenemedi: ${timezone}`);
-  }
-
-  return {
-    isoGun: `${al("year")}-${al("month")}-${al("day")}`,
-    haftaninGunu,
-    dakika: saat * 60 + dakika,
-  };
-}
 
 /** Bir günün açık olduğu dakika aralığı; kapalıysa null. */
-interface AcikAralik {
+export interface AcikAralik {
   acilis: number;
   kapanis: number;
 }
@@ -77,8 +22,7 @@ interface AcikAralik {
  * Öncelik sırası spec satır 19'a dayanır: tekil gün istisnası (bayram, izin)
  * haftalık tekrar eden kaydı EZER.
  */
-function gunlukAralikCoz(
-  yerel: YerelAn,
+export function gunlukAralikCoz(
   haftalik: WorkingHours | null,
   istisna: WorkingHoursException | null,
 ): AcikAralik | null {
@@ -118,7 +62,7 @@ export function randevuCalismaSaatiIcindeMi(
     return { uygun: false, sebep: "Randevu gece yarısını geçemez." };
   }
 
-  const aralik = gunlukAralikCoz(yerelBaslangic, haftalik, istisna);
+  const aralik = gunlukAralikCoz(haftalik, istisna);
   if (!aralik) {
     return { uygun: false, sebep: "İşletme bu gün kapalı." };
   }

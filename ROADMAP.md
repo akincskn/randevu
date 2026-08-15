@@ -56,17 +56,43 @@ dashboard arayüzü, şifre sıfırlama, magic link alternatifi. Bunlar auth API
 > randevu ID'sini bilen herkes başkasının randevusunu onaylayabilirdi. Sıra değişikliği
 > 2026-08-15'te kullanıcı onayıyla yapıldı.
 
-## Faz 3 — Public booking sayfası ⬅️ SIRADAKİ
+## Faz 3 — Public booking sayfası ✅ TAMAMLANDI
 
 Spec dayanağı: satır 22 (hizmet seçimi, uygun saatlerin gösterimi, ad + telefon ile talep),
 satır 30 (müşteri randevu detay ekranı), satır 46 (Turnstile).
 
 Uygulama indirmeden çalışan mobil web arayüzü.
 
-> Bilinen ön koşul: MÜSAİT SLOT ÜRETECİ henüz yazılmadı. `src/lib/availability.ts` verilen
-> bir saatin çalışma saatleri içinde olup olmadığını DOĞRULAR, ancak "bu gün için müsait
-> saatler hangileri" sorusunu cevaplamaz. Spec satır 22 "uygun saati görür" dediği için
-> Faz 3, mevcut randevuları da hesaba katan bir slot üreteci gerektirir.
+- ✅ **Slot üreteci** (`src/lib/slots.ts`, saf fonksiyon) — fazın ön koşuluydu. Hesaba kattıkları:
+  `WorkingHours`, `WorkingHoursException` (haftalık kaydı EZER), slot tutan mevcut randevular,
+  `Service.durationMinutes`, geçmiş saatler, yaz saati geçişinde var olmayan duvar saatleri.
+  Elenen durum listesi (`CANCELLED`, `EXPIRED`) EXCLUDE kısıtının predicate'iyle birebir aynı.
+- ✅ `src/lib/timezone.ts` — mutlak an ↔ yerel duvar saati köprüsü. `availability.ts` 200 satır
+  sınırını aştığı için ayrıldı (`mutlakAnHesapla`, `yerelAnHesapla`).
+- ✅ `GET /api/businesses/[slug]` — işletme + hizmet listesi
+- ✅ `GET /api/availability?businessId&serviceId&date` — o günün müsait saatleri
+- ✅ `GET /api/appointments/token/[token]` — müşteri randevu detayı
+- ✅ `/[businessSlug]` — hizmet → gün → saat → ad+telefon → Turnstile → POST /api/appointments,
+  201 sonrası detay sayfasına yönlendirme
+- ✅ `/[businessSlug]/appointment/[token]` — detay ekranı, altı randevu durumunun tamamı için
+  ayrı görünüm + `publicToken` ile iptal (spec satır 42)
+- ✅ `src/lib/read-limit.ts` — üç yeni public GET route'u için IP bazlı limit (CLAUDE.md §2).
+  Upstash istemcisi `src/lib/redis.ts`'e çıkarıldı; `rate-limit.ts` onu kullanıyor.
+
+Spec'te yazmayan, kullanıcı onayıyla alınan kararlar (2026-08-15): rezervasyon ufku bugün dahil
+14 gün; slot adımı = hizmet süresi (arka arkaya, boşluksuz); saatler düz kronolojik ızgara
+(gruplama yok); detay ekranında iptal butonu var; yeni API route'ları STRUCTURE.md'ye eklendi.
+
+Doğrulama durumu: `npm run build` ve `npx eslint src` temiz. qa-tester beş başlığın tamamını
+canlı Neon ve gerçek Chrome ile çalıştırdı, FAIL yok. Slot üretecinin durum bazlı davranışı
+tek tek ölçüldü (PENDING/CONFIRMED/COMPLETED/NO_SHOW slotu tutar; CANCELLED/EXPIRED bırakır) ve
+çakışan yazma `23P01` ile reddedildi. **Turnstile'ın RET dalı ilk kez gerçek tarayıcı token'ıyla
+doğrulandı** (Cloudflare test anahtarlarıyla): 403 `TURNSTILE_FAILED`, randevu oluşmadı, widget
+sıfırlandı. Faz 2 regresyonu (günlük 5 talep limiti, kota iadesinin negatife düşmemesi) korundu.
+
+> Test edilmeyen iki dal (tahmin üretilmedi): `read-limit.ts`'in dakikada 120 sınırı hiç
+> tetiklenmedi; Turnstile'ın ULAŞILAMAMA (fail-open) dalı, Cloudflare erişimini kesme yolu
+> olmadığı için denenemedi. Faz 7 uçtan uca QA'da ele alınmalı.
 
 ## Faz 4 — Dashboard
 

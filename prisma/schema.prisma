@@ -83,6 +83,14 @@ model Service {
   durationMinutes Int // spec satır 17: süre (dakika)
   price           Decimal? @db.Decimal(10, 2) // spec satır 17: opsiyonel, SADECE bilgi amaçlı
 
+  /// Hizmetin randevu almaya AÇIK olup olmadığı.
+  /// Spec satır 17'de lafzen YOK; PROJECT_SPEC.md "Onaylanan Çıkarımlar" (2026-08-16) ile eklendi.
+  /// Silme yerine pasife alma gerekir: `Appointment.service` ilişkisi `onDelete: Restrict`
+  /// olduğu için randevusu olan bir hizmet SİLİNEMEZ, ama artık sunulmuyor olabilir.
+  /// Pasif hizmet public booking sayfasında ve slot üretecinde görünmez; GEÇMİŞ randevuları
+  /// olduğu gibi kalır (bu yüzden satır silinmez, yalnızca işaretlenir).
+  isActive        Boolean  @default(true)
+
   createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 

@@ -108,14 +108,47 @@ sıfırlandı. Faz 2 regresyonu (günlük 5 talep limiti, kota iadesinin negatif
 > Hâlâ test edilmemiş (tahmin üretilmedi): `read-limit.ts`'in dakikada 120 sınırı hiç
 > tetiklenmedi. Faz 7 uçtan uca QA'da ele alınmalı.
 
-## Faz 4 — Dashboard
+## Faz 4 — Dashboard ✅ TAMAMLANDI
 
 Spec dayanağı: satır 14-19 (hizmet ve çalışma saati yönetimi), satır 24 (bekleyen randevular),
 satır 39 (her zaman görünür bekleyen sayısı rozeti), satır 48-49 (berber kimlik doğrulaması — UI katmanı).
 
-Berber girişi, randevu listesi, bekleyen rozeti, hizmet ve çalışma saati yönetimi.
+- ✅ `/login`, `/register` — Faz 2 auth API'lerinin UI katmanı
+- ✅ `/dashboard` + `layout.tsx` — bugünün randevuları; **bekleyen rozeti LAYOUT'ta** durur,
+  böylece dört sekmede de görünür (spec satır 39 "her zaman görünür"). Sayaç liste yanıtının
+  içinde (`pendingCount`) gelir; ayrı sayaç endpoint'i rozetin listeyle ayrışmasına yol açardı.
+- ✅ `/dashboard/appointments` — dört kapsam (bekleyen/yaklaşan/bugün/tümü), onayla + iptal.
+  Onay `wa.me` linkini YENİ SEKMEDE açar; mesaj MANUEL gönderilir (spec satır 28-29).
+- ✅ `/dashboard/services` — hizmet CRUD + aktif/pasif
+- ✅ `/dashboard/hours` — haftalık saatler (tek transaction, tam hafta) + istisna günleri
+- ✅ 8 yeni oturum korumalı API route'u; `businessId` hiçbirinde istemciden alınmaz
+- ✅ `DELETE /api/auth/session` (çıkış) — `sessionSilHeader()` Faz 2'den beri kullanılmıyordu
 
-Auth tarafında bu faza kalanlar (API'si Faz 2'de yazıldı): login/register sayfaları,
+**Şema değişikliği:** `Service.isActive Boolean @default(true)`, migration
+`20260816000000_add_service_is_active`. Gerekçe PROJECT_SPEC.md "Onaylanan Çıkarımlar"da
+(2026-08-16 onaylı). Pasif hizmet public listede ve slot üretecinde görünmez; geçmiş
+randevuları korunur. `Appointment_no_overlap_excl` kısıtının migration sonrası yerinde
+kaldığı doğrulandı.
+
+**Faz 2/3 arası kırık bağlantı düzeltildi:** `confirm` endpoint'i WhatsApp mesajına
+`/r/<token>` koyuyordu ama öyle bir route hiç var olmadı — berberin müşteriye gönderdiği
+link 404'tü. Artık `/[businessSlug]/appointment/[token]` üretiyor ve linkin açıldığı
+tarayıcıda doğrulandı.
+
+**Faz 2'den gelen gizli hata bulundu ve düzeltildi:** `register` route'u unique ihlalini
+`meta.target` üzerinden okuyordu; Prisma 7 + adapter'da o alan YOK (alan adları
+`meta.driverAdapterError.cause.constraint.fields` altında). Bu yüzden hem "e-posta zaten
+kayıtlı" (409) hem de sonekli-slug yeniden denemesi ÖLÜ KODDU ve ikisi de 500 veriyordu.
+`isSlotConflict` ile aynı sınıf hata; ortak `isUniqueViolation` yardımcısına çıkarıldı.
+Ayrıca ikinci bir hata: catch içindeki yeniden deneme korumasızdı, aynı isim + aynı
+e-posta kombinasyonunda e-posta ihlali dışarı kaçıyordu.
+
+Doğrulama durumu: `npm run build` ve `npx eslint src` temiz. qa-tester sekiz başlığı canlı
+Neon ve gerçek Chrome ile çalıştırdı; yetki izolasyonunda açık YOK (A işletmesi B'nin
+hizmetine/randevusuna/istisnasına 404 veya 403 alıyor). Rozetin dört sekmede de göründüğü,
+onay/iptal sonrası sayfa yenilenmeden güncellendiği ve sıfırda kaybolmadığı doğrulandı.
+
+Auth tarafında hâlâ YAPILMAYANLAR (spec satır 49'da geçiyor, ayrı bir faza ait):
 şifre sıfırlama, magic link alternatifi.
 
 ## Faz 5 — Push bildirimleri

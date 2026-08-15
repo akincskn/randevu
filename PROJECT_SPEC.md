@@ -87,6 +87,13 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   o endpoint id'yi path'te bekliyor. Bu yanıtı yalnızca `publicToken`'ı bilen alır ve iptal
   aynı token'ı ayrıca doğrular; id tek başına hiçbir yetki taşımaz, `publicToken` id'den
   türetilebilir değildir (spec satır 42 korunur). 2026-08-15 onaylandı
+- `Service.isActive` (boolean, varsayılan true) — spec satır 17'de lafzen yok. Gerekçe:
+  `Appointment.service` ilişkisi `onDelete: Restrict` olduğu için bir kez randevu almış
+  hizmet SİLİNEMEZ (geçmiş randevu hangi hizmet için alındığını kaybetmemeli). Berberin
+  artık sunmadığı bir hizmeti listeden çıkarmasının başka yolu yoktu. Pasif hizmet public
+  booking sayfasında ve slot üretecinde görünmez; geçmiş randevuları olduğu gibi kalır.
+  Randevusu olan hizmeti silme denemesi 409 ile reddedilir ve pasife alma önerilir.
+  2026-08-16 onaylandı
 - Turnstile widget'ı İSTEMCİDE yüklenemezse (reklam engelleyici, CDN erişimi yok) gönderim
   KİLİTLİ kalır ve kullanıcıya görünür bir hata gösterilir. Sunucu tarafı fail-open
   politikası (yukarıdaki madde) burada GEÇERLİ DEĞİLDİR: "Cloudflare'e ulaşamadık" bizim

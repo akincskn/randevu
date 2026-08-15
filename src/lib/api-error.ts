@@ -80,6 +80,57 @@ export function isSlotConflict(error: unknown): boolean {
   return typeof aday.message === "string" && aday.message.includes(PG_EXCLUSION_VIOLATION);
 }
 
+/** PostgreSQL unique_violation. */
+const PG_UNIQUE_VIOLATION = "23505";
+
+/**
+ * Belirtilen ALANDA unique kısıt ihlali olup olmadığını söyler.
+ *
+ * `isSlotConflict` ile AYNI Prisma 7 tuzağı: dış `error.code` "P2002" olsa bile
+ * ihlal edilen alanın adı ESKİ yerinde (`meta.target`) DEĞİLDİR. Canlı probe
+ * çıktısı (2026-08-16, Prisma 7.9.1 + @prisma/adapter-pg):
+ *
+ *   code: "P2002"
+ *   meta.target: undefined
+ *   meta.driverAdapterError.cause: {
+ *     originalCode: "23505", kind: "UniqueConstraintViolation",
+ *     constraint: { fields: ["slug"] }
+ *   }
+ *
+ * `meta.target` okuyan kod bu yüzden HER ZAMAN false döner ve çağıran taraftaki
+ * "zaten kayıtlı" / "sonekli slug ile yeniden dene" dalları ölü koda dönüşür.
+ *
+ * Üç kaynak sırayla denenir: yeni adapter şekli, eski `meta.target` (sürüm
+ * geri alınırsa çalışmaya devam etsin) ve son çare olarak hata metni.
+ */
+export function isUniqueViolation(error: unknown, alan: string): boolean {
+  if (typeof error !== "object" || error === null) return false;
+
+  const aday = error as {
+    code?: unknown;
+    message?: unknown;
+    meta?: {
+      target?: unknown;
+      driverAdapterError?: {
+        cause?: { originalCode?: unknown; constraint?: { fields?: unknown } };
+      };
+    };
+  };
+
+  const cause = aday.meta?.driverAdapterError?.cause;
+  const alanlar = cause?.constraint?.fields;
+  if (Array.isArray(alanlar) && alanlar.includes(alan)) return true;
+
+  // Sürücü ihlali doğruladı ama alan adını vermediyse, alan bazlı karar veremeyiz.
+  if (cause?.originalCode === PG_UNIQUE_VIOLATION && alanlar !== undefined) return false;
+
+  const hedef = aday.meta?.target;
+  if (Array.isArray(hedef) ? hedef.includes(alan) : hedef === alan) return true;
+
+  // Son çare: Prisma alan adını mesaja gömer ("...failed on the fields: (`slug`)").
+  return typeof aday.message === "string" && aday.message.includes(`\`${alan}\``);
+}
+
 /**
  * Route handler'lardaki catch bloklarının tek çıkışı.
  * Beklenmeyen hatalar loglanır — asla sessizce yutulmaz.

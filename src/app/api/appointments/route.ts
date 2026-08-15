@@ -59,8 +59,11 @@ export async function POST(request: NextRequest): Promise<Response> {
       throw new ApiError("NOT_FOUND", 404, "İşletme bulunamadı.");
     }
 
+    // `isActive: true` şart — savunmacı: istemci pasife alınmadan ÖNCE yüklenmiş
+    // bir sayfadan eski serviceId'yi gönderebilir (PROJECT_SPEC.md "Onaylanan
+    // Çıkarımlar", 2026-08-16). Listeden gizlemek tek başına yeterli değildir.
     const hizmet = await prisma.service.findFirst({
-      where: { id: talep.serviceId, businessId: isletme.id },
+      where: { id: talep.serviceId, businessId: isletme.id, isActive: true },
       select: { id: true, durationMinutes: true },
     });
     if (!hizmet) {

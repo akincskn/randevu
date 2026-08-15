@@ -56,8 +56,13 @@ export async function PATCH(
     });
 
     const dto = toAppointmentDto(guncel);
+
+    // Müşteri detay ekranının GERÇEK yolu (spec satır 30). Faz 3'e kadar burada
+    // `/r/<token>` yazıyordu ve öyle bir route hiç var olmadı — berberin WhatsApp'tan
+    // gönderdiği link 404 veriyordu. Yol, sayfanın kendisiyle aynı olmak ZORUNDA:
+    // src/app/(public)/[businessSlug]/appointment/[token]/page.tsx
     const detayUrl = new URL(
-      `/r/${guncel.publicToken}`,
+      `/${encodeURIComponent(isletme.slug)}/appointment/${encodeURIComponent(guncel.publicToken)}`,
       process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin,
     ).toString();
 

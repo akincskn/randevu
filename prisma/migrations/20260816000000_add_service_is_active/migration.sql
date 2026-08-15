@@ -1,0 +1,15 @@
+-- Faz 4 (Dashboard) — hizmet yönetimi.
+--
+-- PROJECT_SPEC.md satır 17 yalnızca "isim, süre (dakika), opsiyonel fiyat" diyor;
+-- aktif/pasif ayrımı orada lafzen YOKTUR ve "Onaylanan Çıkarımlar" bölümüne
+-- 2026-08-16 tarihinde kullanıcı onayıyla eklenmiştir.
+--
+-- NEDEN GEREKLİ: `Appointment.service` ilişkisi ON DELETE RESTRICT'tir — bir kez
+-- randevu almış hizmet veritabanı seviyesinde SİLİNEMEZ. Bu doğru bir kısıttır
+-- (geçmiş randevu kaydı, hangi hizmet için alındığını kaybetmemeli), ancak berberin
+-- artık sunmadığı bir hizmeti listeden çıkarmasının BAŞKA hiçbir yolu kalmıyordu.
+-- `isActive`, "sunulmuyor" ile "hiç var olmadı" arasındaki farkı modeller.
+--
+-- DEFAULT true: mevcut satırların tamamı bugün sunuluyor kabul edilir; bu migration
+-- hiçbir hizmeti görünmez yapmaz (geriye dönük davranış değişikliği YOK).
+ALTER TABLE "Service" ADD COLUMN "isActive" BOOLEAN NOT NULL DEFAULT true;

@@ -44,8 +44,11 @@ export async function GET(request: NextRequest): Promise<Response> {
       throw new ApiError("NOT_FOUND", 404, "İşletme bulunamadı.");
     }
 
+    // `isActive: true` şart: pasife alınmış hizmete slot üretilmez
+    // (PROJECT_SPEC.md "Onaylanan Çıkarımlar", 2026-08-16). Pasif hizmet zaten
+    // public listede görünmez; doğrudan id ile sorgulanırsa da yok sayılır.
     const hizmet = await prisma.service.findFirst({
-      where: { id: sorgu.serviceId, businessId: isletme.id },
+      where: { id: sorgu.serviceId, businessId: isletme.id, isActive: true },
       select: { id: true, durationMinutes: true },
     });
     if (!hizmet) {

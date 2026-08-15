@@ -136,6 +136,10 @@ export const BUSINESS_PUBLIC_DTO_SELECT = {
   sector: true,
   timezone: true,
   services: {
+    // Pasif hizmetler public sayfada GÖRÜNMEZ (PROJECT_SPEC.md "Onaylanan
+    // Çıkarımlar", 2026-08-16). Filtre burada, DTO seçiminde durur ki public
+    // yanıtı üreten her yol aynı kuralı otomatik uygulasın.
+    where: { isActive: true },
     select: { id: true, name: true, durationMinutes: true, price: true },
     orderBy: { createdAt: "asc" },
   },

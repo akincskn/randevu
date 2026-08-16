@@ -206,14 +206,36 @@ silindi; gerçek FCM'e sahte endpoint ile 404 dalı da doğrulandı; 10 sn zaman
 `VAPID_PRIVATE_KEY` panel HTML'lerinin hiçbirinde yok. Faz 2-4 regresyonu (14 endpoint,
 rozet sayacı, `wa.me` linki, rastgele token) temiz.
 
-> **Faz 5'te DOĞRULANAMAYANLAR** (tahmin üretilmedi, Faz 7'ye taşındı): geliştirme
-> makinesindeki Chrome'da `localhost:3000` için `Notification.permission === "denied"`
-> olduğu için izin ver → gerçek `pushManager.subscribe` → **ekranda gerçek bildirim**
-> zinciri hiç çalıştırılamadı. Buna bağlı olarak `notificationclick` yönlendirmesi ve
-> `tag`/`renotify` ile bildirim ezme davranışı da gözlenmedi. Doğrulanan sınır: `/sw.js`
-> 200 dönüyor ve kök scope'ta ACTIVATE oluyor; VAPID public anahtarının `Uint8Array`
-> çevrimini Chrome GEÇERLİ kabul etti (65 bayt, 0x04) ve `subscribe` yalnızca
-> `NotAllowedError` ile düştü — yani tek engel izindi.
+**Tarayıcı zinciri GERÇEK FCM ile doğrulandı** (2026-08-16, kullanıcı Chrome'da bildirim
+iznini verdikten sonra):
+
+- ✅ Panelde "Bildirimleri Aç" butonu görünüyor; tıklayınca gerçek `pushManager.subscribe`
+  çalışıyor ve gerçek bir FCM endpoint'i üretiliyor
+  (`https://fcm.googleapis.com/fcm/send/crYV9DlBfOI:APA91bH…`), `p256dh`/`auth` dolu.
+- ✅ `POST /api/push/subscribe` kaydı veritabanına yazıyor; buton "✓ Bildirimler açık" oluyor.
+- ✅ Sunucudan Google'ın push servisine gerçek gönderim: `{toplam:1, basarili:1}`.
+- ✅ **Bildirim ekranda göründü** ve metni beklenenle birebir eşleşti: başlık
+  "Yeni randevu talebi", gövde "&lt;müşteri adı&gt;, &lt;saat&gt;" (kullanıcı gözlemi —
+  Windows bildirim merkezi tarayıcı sekmesinin dışında olduğu için otomatik okunamıyor;
+  `registration.getNotifications()` bu platformda SW bildirimlerini listelemiyor).
+- ✅ **`tag`/`renotify` ezmesi**: aynı etiketle 3 sn arayla iki push → ekranda TEK bildirim,
+  gövdesi ikinciyle güncellenmiş. Bildirim yığılması yok.
+- ✅ **`notificationclick` yönlendirmesi**: tıklama `/dashboard/appointments?scope=pending`
+  adresini açtı (sorgu parametresi dahil).
+
+**Bu turda bulunan ve düzeltilen hata:** `notificationclick` içindeki
+`WindowClient.navigate()` YALNIZCA service worker'ın KONTROL ETTİĞİ sekmelerde çalışır;
+kontrolsüz bir sekmede `TypeError` ile reddedilir. Worker kaydedilmeden önce açılmış her
+sekme ilk yenilemeye kadar kontrolsüzdür — yani ilk kurulumdan hemen sonraki tıklama
+SESSİZCE hiçbir şey yapmıyordu. Reddediş artık yakalanıyor ve `clients.openWindow()`
+yedeğine düşülüyor. İlk (düzeltme öncesi) tıklamada sekmenin `controller: false` olduğu
+ölçüldü; düzeltmeden sonraki tıklama hedefe ulaştı.
+
+> Ölçüm sınırı (dürüstlük notu): düzeltme sonrası tıklamada hedef adresin doğruluğu
+> kullanıcı tarafından görüldü, ancak otomasyonun bağlı olduğu sekme `/dashboard`'da
+> kaldı — yani hedef büyük olasılıkla `openWindow` yedeğiyle AYRI bir sekmede açıldı.
+> "Mevcut sekmeyi yeniden kullanma" davranışının mı yoksa yedek yolun mu çalıştığı
+> ÖLÇÜLMEDİ. İşlevsel sonuç (doğru adres açılıyor) her iki durumda da sağlanıyor.
 
 ## Faz 6 — Cron (zaman aşımı süpürmesi)
 
@@ -237,11 +259,6 @@ Bunlar ilgili fazda TEST EDİLEMEDİ (tahmini sonuç üretilmedi) ve burada kapa
   tıklama sorunu nedeniyle DOM click ile test edildi; React handler'ları aynı olduğu için
   fonksiyonel olarak geçerli sayıldı, ancak gerçek cihaz girdisi doğrulanmadı.
 - **Faz 3 — `read-limit.ts` dakikada 120 istek sınırı.** Hiç tetiklenmedi.
-- **Faz 5 — gerçek bir tarayıcı aboneliğiyle bildirimin EKRANDA görünmesi.** İzin verme →
-  `pushManager.subscribe` → `POST /api/push/subscribe` → bildirimin gösterilmesi →
-  bildirime tıklayınca `/dashboard/appointments?scope=pending` açılması → `tag`/`renotify`
-  ile eski bildirimin ezilmesi. Geliştirme makinesindeki Chrome'da localhost için bildirim
-  izni ENGELLİ olduğu için hiçbiri çalıştırılamadı.
 - **Faz 3 — Turnstile fail-open dalının kesintisiz ortamda 201 ile bitmesi.** Fail-open'ın
   tetiklendiği bir internet kesintisinde gözlendi, ama aynı kesintide Neon'a da
   ulaşılamadığı için istek 500 ile bitti; yalnızca "kontrol atlandı, akış devam etti"

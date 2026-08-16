@@ -324,36 +324,99 @@ Cron kodu hazır ama hiçbir yerde ZAMANLANMADI. Deploy sırasında yapılacakla
 3. İlk turdan sonra Vercel loglarında `[cron] zaman aşımı süpürmesi tamamlandı` satırı
    ve sayaçlar doğrulanır.
 
-## Faz 7 — Uçtan uca QA
+## Faz 7 — Uçtan uca QA ✅ TAMAMLANDI
 
 Spec dayanağı: `PROJECT_SPEC.md`'nin tamamı — tüm acceptance criteria.
 
-Kapsam dışı maddelerin (satır 52-59) sızmadığının ve v2 maddelerinin (satır 61-66)
-implement edilmediğinin doğrulanması dahil.
+Bağımsız `qa-tester` oturumu, canlı Neon + canlı Upstash + gerçek Chrome (Playwright) ile
+~100 başlık koşturdu. **KOD KUSURU BULUNMADI (0 FAIL).** 3 madde TEST EDİLEMEDİ (aşağıda).
+`npm run build`, `npx eslint src`, `npx tsc --noEmit` temiz.
 
-### Önceki fazlardan taşınan, henüz doğrulanmamış maddeler
+**Faz 6 bağımsız olarak yeniden doğrulandı (46 başlık)** — geliştiricinin ölçümleri kanıt
+sayılmadı, hepsi sıfırdan tekrar çalıştırıldı:
 
-Bunlar ilgili fazda TEST EDİLEMEDİ (tahmini sonuç üretilmedi) ve burada kapatılmalı:
+- Zaman aşımı birikimi dakika hassasiyetinde: gece 02:00 talebi 07:59Z PENDING / 08:00Z
+  EXPIRED; Cumartesi 17:30 talebi Pazar (kapalı) boyunca ilerlemedi, Pazartesi 07:29Z
+  PENDING / 07:30Z EXPIRED. Çalışma saati İSTİSNASI olan üç günlük zincir de ölçüldü.
+- `startsAt` önceliği KONTROLLÜ doğrulandı: aynı `createdAt`, uzak `startsAt` → PENDING
+  kaldı; yani randevuyu düşüren şey gerçekten `startsAt`.
+- İşletmeler arası izolasyon: A düşerken B kendi 12:00 açılışına göre 3 saat sonra düştü.
+- EXCLUDE kısıtı İKİ YÖNLÜ: EXPIRED'ın saati yazılabildi, CONFIRMED'ınki `23P01`
+  `conflicting key value violates exclusion constraint "Appointment_no_overlap_excl"` ile
+  reddedildi.
+- Günlük özet 10/10: gerçek TLS push alıcısıyla ölçüldü — "gönderim kararı verildi" değil,
+  240 baytlık aes128gcm gövdenin TESLİM EDİLDİĞİ. Pencere sınırı açılış+29 dk İÇERİDE /
+  +30 dk DIŞARIDA. NX kilidi aynı yerel günde engelledi, farklı günde serbest bıraktı,
+  Upstash'te TTL=93599 sn ile gerçekten oluştu. Özetin süpürmeden SONRA gittiği, alıcının
+  push anında veritabanını sorgulamasıyla kanıtlandı (sayı 2 değil 1 idi).
+- Cron yetkilendirmesi 12/12: 8 farklı geçersiz biçim → 401; GET → 405; doğru secret → 200.
+  Farklı uzunlukta secret 500 değil 401. **Mutasyon kanıtı:** 401 alan istekler DB'yi
+  değiştirmedi, ardından yetkili istek AYNI randevuyu düşürdü — yani randevu gerçekten
+  düşmeye hazırdı, onu koruyan şey 401'lerdi.
+- `cronEnv()` izolasyonu 4/4: `CRON_SECRET` ortamdan tamamen kaldırıldığında `serverEnv()`,
+  `pushEnv()` ve `prisma.business.count()` çalışmaya devam etti; yalnızca `cronEnv()`
+  fırlattı. Faz 5'in VAPID dersi TEKRARLANMAMIŞ.
 
-- **Faz 4 — dashboard'un gerçek fare/dokunmatik girdisiyle testi.** QA'da CDP senkron
-  tıklama sorunu nedeniyle DOM click ile test edildi; React handler'ları aynı olduğu için
-  fonksiyonel olarak geçerli sayıldı, ancak gerçek cihaz girdisi doğrulanmadı.
-- **Faz 3 — `read-limit.ts` dakikada 120 istek sınırı.** Hiç tetiklenmedi.
-- **Faz 3 — Turnstile fail-open dalının kesintisiz ortamda 201 ile bitmesi.** Fail-open'ın
-  tetiklendiği bir internet kesintisinde gözlendi, ama aynı kesintide Neon'a da
-  ulaşılamadığı için istek 500 ile bitti; yalnızca "kontrol atlandı, akış devam etti"
-  kanıtlandı.
-- **Faz 6 — bağımsız QA gözü. ⚠ ÖNCELİKLİ.** QA ajanı hesap oturum limitine takıldığı için
-  doğrulamayı implementasyonu yazan oturum kendisi yaptı. Ölçümler gerçek (canlı Neon, canlı
-  Upstash, gerçek tarayıcı) ama bağımsız değil. **Faz 7'de `qa-tester` bu fazı BAŞTAN,
-  bağımsız olarak tekrar test etmelidir** — geliştiricinin ölçüm sonuçları veri olarak
-  kullanılabilir ama KANIT olarak kabul edilemez; testler yeniden çalıştırılmalıdır.
-  Kapsam: zaman aşımı doğruluğu (bütçe birikimi, kapalı gün, istisna günü, `startsAt` dalı),
-  işletmeler arası izolasyon, EXCLUDE kısıtı, günlük özet penceresi + kilit, cron
-  yetkilendirmesi, `cronEnv()` izolasyonu.
-- **Faz 6 — günlük özetin gerçek push servisine teslimatı.** Zamanlama kararı ölçüldü,
-  teslimat sahte endpoint ile test edildi. Gerçek FCM teslimatı yalnızca Faz 5'te
-  (yeni randevu bildirimi için) doğrulanmıştı; günlük özet metni gerçek cihazda görülmedi.
+**Taşınan dört maddenin hepsi kapandı:**
+
+- **Faz 4 — gerçek pointer/klavye girdisi:** 13 etkileşimin tamamı gerçek Playwright
+  olaylarıyla çalıştı (kayıt, 4 sekme geçişi, hizmet ekle/pasifleştir/aktifleştir/düzenle,
+  haftalık saat kaydetme, istisna ekle/kaldır, onayla → `wa.me` yeni sekmede + rozet 3→2,
+  iptal → rozet 1→0, çıkış). **Gerçek girdiyle çalışmayan etkileşim bulunmadı.**
+- **Faz 3 — `read-limit.ts` 120/dk İLK KEZ TETİKLENDİ:** üç public GET route'unun HER
+  BİRİNDE 121. istek `429 RATE_LIMITED` döndü, ilk 120 istek 200. (İlk deneme yanıltıcı
+  negatif verdi: 126 istek sıralı atılınca 60 sn'lik sabit pencere sıfırlanıyor; pencere
+  başına hizalanıp paralel gruplarla tekrar ölçüldü.)
+- **Faz 3 — Turnstile fail-open KESİNTİSİZ ortamda 201:** doğrulama URL'si geçici olarak
+  cevapsız bir adrese çevrildi (yama raporlandı ve `git checkout` ile geri alındı, commit
+  EDİLMEDİ). Yama öncesi aynı geçersiz token 403, yama sonrası **201 + randevu oluştu**.
+  Neon sağlıklıydı; Faz 3'teki "aynı kesintide 500 ile bitti" sınırı aşıldı.
+- **Faz 6 — günlük özetin gerçek push servisine teslimatı:** Faz 5'ten kalan canlı FCM
+  aboneliğiyle `{toplam:1, basarili:1, silinen:0, basarisiz:0}` — Google'ın push servisi
+  KABUL ETTİ. (Ekranda görülmesi hariç, bkz. aşağıdaki (1).)
+
+**Spec taraması:** v1 kapsamındaki 21 maddenin tamamı satır referanslı doğrulandı; eşzamanlı
+4 istekle slot çakışması TAM 1×201 / 3×409 verdi, telefon kotası 6. istekte 429'a düştü,
+token'lar 43 karakter `base64url` ve ardışık üretimde ilişkisiz. Daha önce hiç QA edilmemiş
+köşeler de tarandı: boş durum ekranları, geçersiz token, yetki izolasyonu (404/403), sunucu
+tarafı doğrulama dalları, 390px mobil düzende yatay taşma yok, konsol temiz.
+
+**Kapsam dışı sızıntı kontrolü TEMİZ:** AI/LLM, WhatsApp Business API, ödeme, SMS,
+kasa/adisyon, reklam, owner/staff — hiçbiri `package.json`'da veya `src/`'de yok. `wa.me`
+yalnızca URL üretiyor, dış servise çağrı yapmıyor (spec 27-29 gereği kapsam İÇİ).
+
+### TEST EDİLEMEDİ (3) — Faz 8'de kapatılmalı
+
+1. **Günlük özet bildiriminin EKRANDA görülmesi.** Sunucudan gerçek FCM'e teslimat
+   kanıtlandı ama Windows bildirim merkezi tarayıcı sekmesinin dışında ve
+   `registration.getNotifications()` bu platformda SW bildirimlerini listelemiyor.
+   Beklenen metin: başlık "Bekleyen randevular", gövde "N bekleyen randevunuz var".
+   Kullanıcının gözle teyidi gerekiyor.
+2. **QStash zamanlamasının kaydı ve ilk turun canlı logu.** Faz 8 işi.
+3. **"Yeni randevu talebi" push'unun bu oturumda yeniden ölçümü.** Tarayıcıdan randevu
+   alınan test işletmesinin aboneliği yoktu, `after()` no-op'a düştü. Aynı taşıma katmanı
+   özet üzerinden gerçek FCM'e karşı ölçüldü; bu bildirim Faz 5'te zaten doğrulanmıştı.
+
+### Kod kusuru olmayan, karara bağlanacak gözlemler
+
+QA bunları FAIL saymadı, düzeltme YAPMADI — v1'i bloke etmiyorlar:
+
+- (a) Var olmayan slug sayfası HTTP **200** dönüyor (ekranda doğru Türkçe "İşletme
+  bulunamadı." yazıyor). Karşılaştırma: var olmayan derin yol 404 veriyor.
+- (b) Detay sayfasında `[businessSlug]` segmenti doğrulanmıyor — başka işletmenin slug'ı
+  ile geçerli token çalışıyor. Güvenlik açığı DEĞİL (yetki token'ın kendisi, spec 42) ama
+  URL'deki slug hiç kontrol edilmiyor.
+- (c) Sekme değişimi URL'e yansımıyor; yenilemede seçili sekme kayboluyor.
+- (d) Her sayfanın `<title>` değeri hâlâ "Create Next App".
+- (e) `read-limit`, `x-forwarded-for` başlığı YOKKEN hiç uygulanmıyor (kodda bilinçli;
+  Vercel'de başlık daima var). Limitin bugüne kadar hiç tetiklenmemiş olmasının sebebi bu.
+- (f) WhatsApp mesajındaki bozuk emoji BİZİM hatamız DEĞİL — sunucunun ürettiği link bayt
+  düzeyinde doğru; bozulma `wa.me` → `api.whatsapp.com` yönlendirmesinde WhatsApp tarafında.
+
+> **v1 canlıya çıkarken bilinen ve KASITLI risk:** login brute-force koruması ve şifre
+> sıfırlama YOK (2026-08-16'da birlikte v2'ye ertelendi). QA `POST /api/auth/login`'in
+> bugün sınırsız denemeye açık olduğunu ölçtü. FAIL sayılmadı çünkü bilinçli bir karar,
+> ama canlıda duran bir risktir.
 
 ## Faz 8 — İlk deploy
 

@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
 import { AppointmentsView } from "@/components/dashboard/appointments-view";
+
+export const metadata: Metadata = { title: "Randevular" };
 
 /**
  * Tüm randevular — spec satır 24.

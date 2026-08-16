@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { AppointmentDetail } from "@/components/public/appointment-detail";
+
+export const metadata: Metadata = { title: "Randevu detayı" };
 
 /**
  * Müşteri randevu detay ekranı — spec satır 30 ("saat, hizmet, adres").

@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { RegisterForm } from "@/components/dashboard/register-form";
+
+export const metadata: Metadata = { title: "Kayıt ol" };
 
 /** Berber kayıt sayfası — spec satır 15-16 + 49'un UI katmanı. */
 export default function RegisterPage() {

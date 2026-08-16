@@ -397,21 +397,113 @@ yalnızca URL üretiyor, dış servise çağrı yapmıyor (spec 27-29 gereği ka
    alınan test işletmesinin aboneliği yoktu, `after()` no-op'a düştü. Aynı taşıma katmanı
    özet üzerinden gerçek FCM'e karşı ölçüldü; bu bildirim Faz 5'te zaten doğrulanmıştı.
 
-### Kod kusuru olmayan, karara bağlanacak gözlemler
+### Faz 7 gözlemleri ve karara bağlanan sonuçları (2026-08-16)
 
-QA bunları FAIL saymadı, düzeltme YAPMADI — v1'i bloke etmiyorlar:
+QA altı gözlem bildirdi, hiçbiri FAIL değildi. Kullanıcı **(a) ve (d)'nin düzeltilmesine,
+(b) (c) (e) (f)'ye DOKUNULMAMASINA** karar verdi. Gerekçeler burada kayıtlı ki ileride
+tekrar sorulmasın — bunlar açık iş DEĞİL, KAPANMIŞ kararlardır.
 
-- (a) Var olmayan slug sayfası HTTP **200** dönüyor (ekranda doğru Türkçe "İşletme
-  bulunamadı." yazıyor). Karşılaştırma: var olmayan derin yol 404 veriyor.
-- (b) Detay sayfasında `[businessSlug]` segmenti doğrulanmıyor — başka işletmenin slug'ı
-  ile geçerli token çalışıyor. Güvenlik açığı DEĞİL (yetki token'ın kendisi, spec 42) ama
-  URL'deki slug hiç kontrol edilmiyor.
-- (c) Sekme değişimi URL'e yansımıyor; yenilemede seçili sekme kayboluyor.
-- (d) Her sayfanın `<title>` değeri hâlâ "Create Next App".
-- (e) `read-limit`, `x-forwarded-for` başlığı YOKKEN hiç uygulanmıyor (kodda bilinçli;
-  Vercel'de başlık daima var). Limitin bugüne kadar hiç tetiklenmemiş olmasının sebebi bu.
-- (f) WhatsApp mesajındaki bozuk emoji BİZİM hatamız DEĞİL — sunucunun ürettiği link bayt
-  düzeyinde doğru; bozulma `wa.me` → `api.whatsapp.com` yönlendirmesinde WhatsApp tarafında.
+- **(a) DÜZELTİLDİ.** Var olmayan slug HTTP 200 dönüyordu. `[businessSlug]/page.tsx` artık
+  sunucu tarafında public API'ye sorup işletme yoksa `notFound()` çağırıyor; Türkçe
+  `src/app/not-found.tsx` eklendi (aksi halde Next.js'in İngilizce varsayılan 404'ü
+  görünürdü). API'ye ULAŞILAMADIĞINDA 404 verilmez — geçici bir kesinti kalıcı bir
+  "dükkan yok" mesajına dönüşmemeli (Turnstile/Upstash fail-open politikasıyla aynı yön).
+- **(b) DOKUNULMAYACAK — kapandı.** Detay sayfasında `[businessSlug]` segmenti
+  doğrulanmıyor; başka işletmenin slug'ı ile geçerli token çalışıyor. Güvenlik açığı
+  DEĞİLDİR: yetki token'ın kendisidir (spec satır 42), token tahmin edilemez ve ekranda
+  randevunun GERÇEK sahibi işletmenin adı yazar. Slug burada yalnızca bir URL süsü.
+- **(c) DOKUNULMAYACAK — kapandı.** Panel sekme değişimi URL'e yansımıyor, yenilemede
+  seçili sekme kayboluyor. Kozmetik; spec sekme durumunun kalıcılığını istemiyor.
+- **(d) DÜZELTİLDİ.** "Create Next App" kalıntısı kaldırıldı: kök `metadata` gerçek başlık
+  + Türkçe açıklama, `%s · Randevu` şablonu, `<html lang>` `en` → `tr`, yedi sayfaya kendi
+  başlığı, public booking sayfasına İŞLETMENİN adı. Randevu detay sayfası bilinçli olarak
+  STATİK "Randevu detayı" başlığı taşır — müşteri adı/saati başlığa (ve tarayıcı
+  geçmişine) sızmasın diye.
+- **(e) DOKUNULMAYACAK — kapandı.** `read-limit`, `x-forwarded-for` başlığı yokken
+  uygulanmıyor. Kodda bilinçli ve yorumlanmış: Vercel arkasında bu başlık DAİMA vardır,
+  başlıksız istek yalnızca doğrudan sunucuya erişimde (yerel geliştirme) olur. Limitin
+  bugüne kadar hiç tetiklenmemiş olmasının sebebi buydu.
+- **(f) BİZİM HATAMIZ DEĞİL — kapandı.** WhatsApp mesajındaki bozuk emoji. Sunucunun
+  ürettiği link bayt düzeyinde doğru (`%F0%9F%93%85`, `%E2%9C%82%EF%B8%8F` ölçüldü);
+  bozulma `wa.me` → `api.whatsapp.com` yönlendirmesinde WhatsApp tarafında oluşuyor.
+  Bizim tarafımızda yapılacak bir şey yok.
+
+### (a) ve (d) düzeltmelerinin QA'sı (2026-08-17)
+
+Düzeltmeler `qa-metadata` tarafından 24 başlıkta test edildi: **21 PASS / 2 FAIL /
+1 TEST EDİLEMEDİ.** İki FAIL de düzeltmelerin kendisinden çıktı ve ele alındı.
+
+**FAIL 2 — DÜZELTİLDİ.** Var olmayan slug sayfasının başlığı sunucu HTML'inde
+"Sayfa bulunamadı", hydration sonrası "İşletme bulunamadı" oluyordu; iki kaynak iki
+farklı metin veriyordu. `generateMetadata` artık ÜÇ durumu ayırıyor: `var` → işletme
+adı, `yok` → `not-found.tsx` ile aynı sabit (`BULUNAMADI_BASLIGI`, tek yerden
+paylaşılıyor), `bilinmiyor` → başlık vermez, kök varsayılan miras alınır. Üçüncü dal
+QA'nın ayrıca bildirdiği gözlemi de kapattı: API kesintisinde çalışan bir randevu
+ekranının üstünde "İşletme bulunamadı" yazmıyor artık.
+
+**FAIL 1 — KABUL EDİLEN SINIR, DÜZELTME GİRİŞİMİ YAPILMAYACAK.**
+`notFound()` render'ı Next.js 16.3.1'de root layout dışında oluşuyor (framework
+davranışı, üç ayrı yöntemle doğrulandı, proje kodundan kaynaklanmıyor). Etkisi:
+yalnızca var olmayan işletme linkine gidildiğinde, hydration tamamlanana kadar ilk
+HTML'de lang/font sınıfı eksik. Hydration sonrası düzeliyor. Kabul edilen sınır,
+düzeltme girişimi yapılmayacak.
+
+> Doğrulama yöntemi (ileride aynı yol tekrar denenmesin diye): `(public)` route
+> grubuna `not-found.tsx` eklendi → değişmedi; `[businessSlug]` segmentine eklendi →
+> değişmedi; metadata/fetch/route grubu içermeyen, yalnızca `notFound()` çağıran boş
+> bir test route'u → aynı `<html id="__next_error__">` çıktısı. Faydasız olduğu
+> kanıtlanan kopyalar silindi. EŞLEŞMEYEN URL'lerin 404'ü (ör. `/a/b/c`) bu durumdan
+> ETKİLENMİYOR, kök layout'u ve `lang="tr"` alıyor.
+
+**TEST EDİLEMEDİ:** prod'da istemci tarafı istek sayısı — `next start` çalışan dev
+sunucusuyla aynı `.next` dizinini paylaştığı için chunk'lar 500 döndü. Sunucu tarafı
+ölçüm etkilenmedi.
+
+**Ölçüm (kusur değil):** sunucu tarafı varlık kontrolü sayfa başına TAM 1 ek istek
+getiriyor — `cache()` sarmalayıcısı `generateMetadata` + sayfa çiftini gerçekten
+tekilleştiriyor. Dev'de istemci ayrıca 2 istek atıyor (React StrictMode çift-effect).
+
+**SON TUR QA (2026-08-17) — 23/23 PASS, FAIL YOK.** Bağımsız `qa-son-tur` oturumu
+düzeltmeleri yeniden ölçtü:
+
+- Başlık kayması yeniden ÜRETİLEMEDİ: olmayan slug için ham HTML `<title>` ile
+  tarayıcıda hydration sonrası `document.title` **birebir aynı** ("Sayfa bulunamadı ·
+  Randevu"). `/demo-berber` başlığı da hydration sonrası değişmiyor.
+- Fail-open dalı stub sunucuyla GERÇEKTEN tetiklendi (stub logu iki isteği de kaydetti):
+  HTTP 200 + kök varsayılan başlık. Eski "İşletme bulunamadı" başlığı gitmiş.
+- Kabul edilen sınır teyit edildi: olmayan slug 404, gövde Türkçe, hydration sonrası
+  `documentElement.lang` = "tr" ve `id` boşalıyor. Eşleşmeyen URL 404'ünde REGRESYON YOK.
+- Silinen 5 SVG'nin hepsi HTTP 404; uygulama kodunda referans yok; gerçek tarayıcıda
+  8 sayfada tek bir asset 404'ü veya kırık görsel yok. `.playwright-mcp/` ignore ediliyor.
+- Dar regresyon temiz: build/eslint/tsc, kök sayfa bağlantıları, `/demo-berber` booking
+  akışı (3 hizmet → 14 gün → 14 slot), panel giriş/sekmeler/çıkış, müşteri detay sayfası.
+
+> QA `next build`'i repo İÇİNDE çalıştırmadı: `next build` ile `next dev` aynı `.next`
+> dizinini paylaştığı için kullanıcının dev sunucusunu bozmamak adına repo'nun repo
+> dışına alınmış bir kopyasında derledi.
+
+**QA'nın bildirdiği, bu turun kapsamı DIŞINDA kalan gözlem:** geçersiz `publicToken` ile
+randevu detay sayfası HTTP **200** dönüyor (gövdede istemci tarafı "Randevu bulunamadı."
+uyarısı çıkıyor), yani olmayan slug için seçilen 404 yaklaşımından farklı davranıyor.
+Karara bağlanmadı — kullanıcıya sorulmalı.
+
+### Faz 7'de ORTAYA ÇIKAN, karara bağlanan madde
+
+- **Kök `/` sayfası — YAZILDI (2026-08-17).** `src/app/page.tsx` create-next-app'in
+  İngilizce şablonuydu (Next.js logosu, "To get started, edit the page.tsx file.",
+  Vercel/Next.js pazarlama linkleri). QA'nın altı gözleminde YOKTU — spec'te kök sayfa
+  tanımlı olmadığı için tarama kapsamına girmemişti; (d) düzeltilirken fark edildi.
+  `PROJECT_SPEC.md` bir tanıtım sayfası TANIMLAMIYOR, bu yüzden içeriği tahmin edilmedi
+  ve kullanıcıya soruldu. Onaylanan kapsam BİLİNÇLİ OLARAK DAR: başlık + tek cümle +
+  "Ücretsiz Kayıt Ol" (`/register`) + "Giriş Yap" (`/login`). Hero görsel, özellik
+  listesi, fiyatlandırma KASITEN YOK — spec'te olmayan bir pazarlama yüzeyi
+  büyütülmeyecek. Hedef kitle BERBERDİR; müşteriler buraya değil işletmenin kendi
+  linkine gelir (spec satır 22).
+- **create-next-app kalıntısı olan 5 SVG silindi** (`next.svg`, `vercel.svg`, `file.svg`,
+  `globe.svg`, `window.svg`) — beşi de referanssızdı, önce `grep` ile doğrulandı.
+  `public/` içinde artık yalnızca `sw.js` var (Faz 5 service worker'ı).
+- **`.gitignore`'a `.playwright-mcp/` eklendi.** Her Playwright MCP oturumu repo köküne
+  snapshot/console/screenshot dosyaları bırakıyor ve `git status`'ü kirletiyordu.
 
 > **v1 canlıya çıkarken bilinen ve KASITLI risk:** login brute-force koruması ve şifre
 > sıfırlama YOK (2026-08-16'da birlikte v2'ye ertelendi). QA `POST /api/auth/login`'in

@@ -45,3 +45,6 @@ qa-tmp-*.mjs
 
 # Geçici QA fixture'ları (Faz 3) — uygulama kodu değil
 .tmp-qa/
+
+# Playwright MCP oturum ciktilari (snapshot/console/screenshot) — uygulama kodu degil
+.playwright-mcp/

@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import { AppointmentList } from "@/components/dashboard/appointment-list";
+
+export const metadata: Metadata = { title: "Bugün" };
 
 /**
  * Panel ana sayfası — spec satır 24 (bekleyen randevular) + satır 39 (rozet).

@@ -99,6 +99,35 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   kalıyor. Yalnızca brute-force koruması eklenirse kilitlenen berberin kendini kurtarma yolu
   olmaz; yalnızca şifre sıfırlama eklenirse giriş denemeleri sınırsız kalırken yeni bir
   saldırı yüzeyi açılır. 2026-08-16 onaylandı
+- **Zaman aşımı bütçesi 120 dakikadır ve AÇIK geçen dakikalar BİRİKİR** — spec satır 34'teki
+  "örn. ilk 1-2 saat" bağlayıcı bir sayı vermiyordu. `createdAt`'ten itibaren yalnızca
+  işletmenin açık olduğu dakikalar sayılır; kapalıyken sayaç DURUR ve ertesi açılışta
+  kaldığı yerden devam eder (satır 35'in birebir karşılığı). Böylece her talebe eşit
+  120 dakika tanınır: gece 02:00'de gelen talep 09:00 açılışlı bir dükkanda 11:00'de,
+  17:30'da gelen talep ertesi gün açılıştan 90 dakika sonra düşer. 2026-08-16 onaylandı
+- **Randevu SAATİ (`startsAt`) geçtiğinde randevu, 120 dakikası dolmasa bile EXPIRED olur** —
+  iki koşuldan hangisi önce gerçekleşirse o uygulanır. Spec bu durumdan hiç bahsetmiyordu.
+  Gerekçe: geçmiş bir saati onaylamak anlamsızdır ve o slot `Appointment_no_overlap_excl`
+  gereği boşuna dolu tutulur. 2026-08-16 onaylandı
+- **Zaman aşımı son tarihi SAKLANMAZ, süpürme anında hesaplanır** — `Appointment` üzerine
+  `expiresAt` kolonu EKLENMEDİ. Gerekçe: berber çalışma saatlerini veya bir istisna gününü
+  randevu oluşturulduktan SONRA değiştirebilir; saklanan bir son tarih o anda eskir ve geri
+  doldurma mantığı gerektirirdi. 2026-08-16 onaylandı
+- **Süpürme Upstash QStash ile 15 dakikada bir tetiklenir** — Vercel Cron ücretsiz planda
+  günde yalnızca 1 tetikleme verdiği için elendi: "açılıştan 1-2 saat sonra" kuralı ve
+  her işletmeyi kendi açılış saatinde yakalaması gereken günlük özet günde tek çağrıyla
+  taşınamaz. Upstash hesabı projede zaten kurulu. 2026-08-16 onaylandı
+- **Günlük özet (satır 38) sık cron + açılış penceresi + Redis NX kilidi ile zamanlanır** —
+  her turda işletmenin YEREL saati o günkü açılışın ilk 30 dakikasına düşüyorsa özet
+  gönderilir; `digest:<businessId>:<yerelGün>` anahtarı (SET NX, 26 saat TTL) aynı gün
+  ikinci gönderimi engeller. **Redis'e ULAŞILAMAZSA kilit kontrolü atlanır ve özet yine de
+  gönderilir** (fail-open, mevcut rate-limit politikasıyla tutarlı): bir altyapı kesintisinin
+  bildirimi tamamen susturması, nadir bir çift bildirimden daha maliyetli görüldü.
+  Migration gerektirmeyen çözüm tercih edildi. 2026-08-16 onaylandı
+- **Cron endpoint'i `Authorization: Bearer <CRON_SECRET>` ile korunur** — `timingSafeEqual`
+  ile sabit süreli karşılaştırma, en az 32 karakter kriptografik rastgele değer
+  (`SESSION_SECRET` ile aynı kalıp). QStash imza doğrulaması yerine ortak sır seçildi:
+  sağlayıcıdan bağımsız kalır ve elle test edilebilir. 2026-08-16 onaylandı
 - Turnstile widget'ı İSTEMCİDE yüklenemezse (reklam engelleyici, CDN erişimi yok) gönderim
   KİLİTLİ kalır ve kullanıcıya görünür bir hata gösterilir. Sunucu tarafı fail-open
   politikası (yukarıdaki madde) burada GEÇERLİ DEĞİLDİR: "Cloudflare'e ulaşamadık" bizim

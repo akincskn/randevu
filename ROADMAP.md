@@ -237,12 +237,92 @@ yedeğine düşülüyor. İlk (düzeltme öncesi) tıklamada sekmenin `controlle
 > "Mevcut sekmeyi yeniden kullanma" davranışının mı yoksa yedek yolun mu çalıştığı
 > ÖLÇÜLMEDİ. İşlevsel sonuç (doğru adres açılıyor) her iki durumda da sağlanıyor.
 
-## Faz 6 — Cron (zaman aşımı süpürmesi)
+## Faz 6 — Cron (zaman aşımı süpürmesi) ✅ TAMAMLANDI ⚠ bağımsız QA bekliyor (session limiti nedeniyle geliştirici kendi kodunu test etti)
 
-Spec dayanağı: satır 32-35. Sabit "2 saat" kuralı YOK; zaman aşımı işletmenin çalışma
-saatlerine göre hesaplanır, kapalı saatlerde geçen süre sayılmaz.
+Spec dayanağı: satır 32-35 (çalışma saati farkındalıklı zaman aşımı) ve satır 38 (günlük özet).
+Sabit "2 saat" kuralı YOK; kapalı saatlerde geçen süre sayılmaz.
 
-`Business.timezone` + `WorkingHours` üzerinden hesaplama; süresi dolan randevular `EXPIRED`.
+- ✅ `src/lib/expiry.ts` — SAF hesap (`slots.ts` ile aynı gerekçe: veritabanına dokunmaz).
+  `createdAt`'ten itibaren yalnızca AÇIK dakikalar birikir, 120'ye ulaşınca randevu düşer;
+  kapalıyken sayaç durur, ertesi açılışta devam eder. Birikim duvar saati farkıyla değil
+  MUTLAK zaman farkıyla ölçülür — yaz saati geçişinde 09:00-18:00 açık bir gün gerçekte
+  9 değil 8 saattir.
+- ✅ `src/lib/expiry-sweep.ts` — okuma → `updateMany` ile EXPIRED → günlük özet. Özet
+  güncellemeden SONRA gönderilir, böylece "N bekleyen" sayısı az önce düşenleri içermez.
+- ✅ `src/lib/digest-lock.ts` — `digest:<businessId>:<yerelGün>` (SET NX, 26 sa TTL).
+  Redis'e ulaşılamazsa FAIL-OPEN (kullanıcı kararı).
+- ✅ `src/lib/cron-auth.ts` + `cronEnv()` — `Authorization: Bearer <CRON_SECRET>`,
+  `timingSafeEqual`. `pushEnv()` ile aynı gerekçeyle AYRI şema.
+- ✅ `POST /api/cron/expire-appointments` — 34 satır, yalnızca kimlik doğrulayıp süpürmeyi
+  çağırır. GET YOK: tarayıcıda kazara açılan bir adres randevu durumu değiştirmemeli.
+
+**Spec'te yazmayan, kullanıcı onaylı kararlar (2026-08-16):** bütçe 120 dk ve açık dakikalar
+birikir; `startsAt` geçtiyse bütçe dolmasa da EXPIRED; `expiresAt` kolonu EKLENMEDİ (hesap
+süpürme anında yapılır, böylece berber saatlerini sonradan değiştirince eskimez); zamanlayıcı
+Upstash QStash 15 dk (Vercel Cron ücretsiz planda günde 1 tetikleme verdiği için elendi);
+günlük özet = açılış penceresi + Redis NX kilidi. Gerekçeler PROJECT_SPEC.md
+"Onaylanan Çıkarımlar"da.
+
+**Uygulama sırasında seçilen iki parametre (spec'te yok, kullanıcıya bildirildi):**
+`OZET_PENCERESI_DAKIKA = 30` — cron aralığından geniş tutuldu ki tek tur kaçırıldığında
+o günün özeti tamamen düşmesin; mükerrerliği kilit engelliyor. `MAX_GUN = 400` — birikim
+döngüsünde sonsuz döngü koruması; sınıra ulaşılırsa randevu "dolmamış" sayılır (fail-safe),
+çünkü her günü kapalı bir işletmede sayaç gerçekten ilerlemez.
+
+Doğrulama durumu: `npm run build` ve `npx eslint src` temiz.
+
+> **QA ajanı hesap oturum limitine takıldı; doğrulamayı ana oturum kendisi yaptı.**
+> Bu, ayrı bir QA gözünün eksik olduğu anlamına gelir — Faz 7'de bağımsız olarak
+> tekrarlanmalı.
+
+Saf hesap katmanı 19 senaryoyla ölçüldü (gece talebi, akşam talebinin ertesi güne taşması,
+kapalı Pazar, istisna günü, `startsAt` dalı, MAX_GUN uyarısı). Süpürme CANLI Neon + CANLI
+Upstash üzerinde 28 doğrulamayla ölçüldü:
+
+- Gece 02:00 talebi 09:00 açılışlı dükkanda 10:59'da PENDING, **11:00'da EXPIRED**.
+- Cumartesi 17:30 talebi Pazar (kapalı) boyunca ilerlemedi, **Pazartesi 10:30'da** düştü.
+- `startsAt` geçmiş ama bütçesi dolmamış randevu EXPIRED oldu (kural 2).
+- CONFIRMED / CANCELLED / COMPLETED / NO_SHOW randevulara DOKUNULMADI.
+- İzolasyon: 12:00 açan B işletmesinin randevusu, 09:00 açan A'nın takvimine göre DEĞİL
+  kendi takvimine göre değerlendirildi (11:00'da PENDING, 14:00'te EXPIRED).
+- **EXCLUDE kısıtı ölçüldü:** EXPIRED randevunun saatine yeni kayıt YAZILABİLDİ; karşı
+  kontrolde CONFIRMED randevunun saati hâlâ REDDEDİLDİ.
+- Günlük özet: pencere içinde gönderildi, pencere dışında gönderilmedi, aynı gün ikinci
+  turda Redis kilidi engelledi, farklı gün kilidi serbest kaldı.
+- Bozuk `timezone` ("Mars/Olympus") olan işletme süpürmeyi ÇÖKERTMEDİ; hata loglandı,
+  diğer işletme işlenmeye devam etti.
+- Yetkilendirme (gerçek HTTP, 7/7): başlıksız / yanlış / tek karakter bozuk / kısa /
+  `Bearer` öneksiz istekler **401**; GET **405**; doğru secret **200**. Farklı uzunlukta
+  secret 500 değil 401 verdi (`timingSafeEqual` uzunluk koruması).
+- **Faz 5 dersinin tekrarlanmadığı ölçüldü:** `CRON_SECRET` ortamdan KALDIRILDIĞINDA
+  `serverEnv()` ve veritabanı sorgusu çalışmaya devam etti, yalnızca `cronEnv()` fırladı.
+
+**Gerçek tarayıcı (Playwright, localhost:3000):** panelde iki bekleyen randevu varken rozet
+**2** gösterdi; cron çağrısından sonra rozet **1**'e düştü, süresi dolan randevu bekleyen
+listesinden çıktı, taze randevu korundu. Müşteri detay ekranı (`/[slug]/appointment/[token]`)
+**"Talebin süresi doldu"** görünümünü verdi.
+
+> **Ölçülmeyen (dürüstlük notu):** günlük özetin GERÇEK bir push servisine ulaşması bu fazda
+> test EDİLMEDİ — sahte abonelik endpoint'i (bağlantı reddi) kullanıldı, çünkü ölçülmek
+> istenen ZAMANLAMA kararıydı. Gerçek FCM teslimatı Faz 5'te doğrulanmıştı.
+> **QStash zamanlaması HENÜZ KAYDEDİLMEDİ** — Faz 8 (deploy) işidir, aşağıya bakın.
+
+### Faz 8'e devredilen kurulum
+
+Cron kodu hazır ama hiçbir yerde ZAMANLANMADI. Deploy sırasında yapılacaklar:
+
+1. Vercel ortam değişkenlerine `CRON_SECRET` eklenir (min 32 karakter, kriptografik rastgele):
+   `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`
+2. QStash'te 15 dakikalık zamanlama kaydedilir:
+   ```
+   curl -X POST https://qstash.upstash.io/v2/schedules/https://<alan-adi>/api/cron/expire-appointments \
+     -H "Authorization: Bearer $QSTASH_TOKEN" \
+     -H "Upstash-Cron: */15 * * * *" \
+     -H "Upstash-Forward-Authorization: Bearer $CRON_SECRET"
+   ```
+   (`Upstash-Forward-*` başlıkları hedefe `Authorization` olarak iletilir.)
+3. İlk turdan sonra Vercel loglarında `[cron] zaman aşımı süpürmesi tamamlandı` satırı
+   ve sayaçlar doğrulanır.
 
 ## Faz 7 — Uçtan uca QA
 
@@ -263,6 +343,17 @@ Bunlar ilgili fazda TEST EDİLEMEDİ (tahmini sonuç üretilmedi) ve burada kapa
   tetiklendiği bir internet kesintisinde gözlendi, ama aynı kesintide Neon'a da
   ulaşılamadığı için istek 500 ile bitti; yalnızca "kontrol atlandı, akış devam etti"
   kanıtlandı.
+- **Faz 6 — bağımsız QA gözü. ⚠ ÖNCELİKLİ.** QA ajanı hesap oturum limitine takıldığı için
+  doğrulamayı implementasyonu yazan oturum kendisi yaptı. Ölçümler gerçek (canlı Neon, canlı
+  Upstash, gerçek tarayıcı) ama bağımsız değil. **Faz 7'de `qa-tester` bu fazı BAŞTAN,
+  bağımsız olarak tekrar test etmelidir** — geliştiricinin ölçüm sonuçları veri olarak
+  kullanılabilir ama KANIT olarak kabul edilemez; testler yeniden çalıştırılmalıdır.
+  Kapsam: zaman aşımı doğruluğu (bütçe birikimi, kapalı gün, istisna günü, `startsAt` dalı),
+  işletmeler arası izolasyon, EXCLUDE kısıtı, günlük özet penceresi + kilit, cron
+  yetkilendirmesi, `cronEnv()` izolasyonu.
+- **Faz 6 — günlük özetin gerçek push servisine teslimatı.** Zamanlama kararı ölçüldü,
+  teslimat sahte endpoint ile test edildi. Gerçek FCM teslimatı yalnızca Faz 5'te
+  (yeni randevu bildirimi için) doğrulanmıştı; günlük özet metni gerçek cihazda görülmedi.
 
 ## Faz 8 — İlk deploy
 

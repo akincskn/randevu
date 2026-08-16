@@ -90,3 +90,37 @@ export function pushEnv(): z.infer<typeof pushEnvSchema> {
   pushCached = parsed.data;
   return pushCached;
 }
+
+/**
+ * Cron ortak sırrı — Faz 6, spec satır 32-35'teki süpürmenin koruması.
+ *
+ * `pushEnv()` ile AYNI gerekçeyle AYRI bir şema: `serverEnv()`e konsaydı,
+ * eksik bir `CRON_SECRET` `prisma.ts` üzerinden veritabanı bağlantısını ve
+ * dolayısıyla randevu almayı komple durdururdu. Cron yapılandırma hatası
+ * yalnızca cron'u bozmalıdır.
+ *
+ * `SESSION_SECRET` ile aynı kalıp — kriptografik rastgele, en az 32 karakter:
+ *   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+ */
+const cronEnvSchema = z.object({
+  CRON_SECRET: z
+    .string()
+    .min(32, "CRON_SECRET en az 32 karakter olmalı (kriptografik rastgele bir değer)"),
+});
+
+let cronCached: z.infer<typeof cronEnvSchema> | null = null;
+
+export function cronEnv(): z.infer<typeof cronEnvSchema> {
+  if (cronCached) return cronCached;
+
+  const parsed = cronEnvSchema.safeParse(process.env);
+  if (!parsed.success) {
+    const eksikler = parsed.error.issues
+      .map((issue) => `  - ${issue.path.join(".")}: ${issue.message}`)
+      .join("\n");
+    throw new Error(`Cron yapılandırması geçersiz:\n${eksikler}`);
+  }
+
+  cronCached = parsed.data;
+  return cronCached;
+}

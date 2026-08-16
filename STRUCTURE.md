@@ -76,7 +76,11 @@ This is the required layout. Agents must not invent alternative structures.
 │   │   ├── format.ts                     # tr-TR date/time/price formatting
 │   │   ├── minute-time.ts                # minutes-from-midnight <-> "HH:MM"
 │   │   ├── push.ts                       # Web Push transport (VAPID) + dead-subscription cleanup
-│   │   └── push-notifications.ts         # Notification CONTENT (new request, daily digest)
+│   │   ├── push-notifications.ts         # Notification CONTENT (new request, daily digest)
+│   │   ├── expiry.ts                     # PURE: business-hours-aware timeout maths (spec 32-35)
+│   │   ├── expiry-sweep.ts               # Sweep orchestration: read -> expire -> daily digest
+│   │   ├── digest-lock.ts                # Redis NX once-per-local-day guard for the digest
+│   │   └── cron-auth.ts                  # Bearer CRON_SECRET check (timing-safe)
 │   └── components/
 │       ├── public/
 │       └── dashboard/
@@ -100,9 +104,17 @@ This is the required layout. Agents must not invent alternative structures.
   `api/appointments`, because that file already carries the PUBLIC `POST` (spec line 22). Keeping an
   unauthenticated and a session-protected contract in one file invites mixing them up.
 
-- `api/cron/expire-appointments` is called on a schedule (Vercel Cron or Upstash QStash, both free-tier
-  viable). It must NOT use a fixed wall-clock timeout — it reads each business's working hours and
-  exceptions to decide which `PENDING` appointments are past their business-hours-aware deadline.
+- `api/cron/expire-appointments` is called on a schedule. **Phase 6 settled this: Upstash QStash every
+  15 minutes**, not Vercel Cron — the free Vercel plan allows only one trigger per day, which cannot
+  carry "1-2 hours after opening" nor a digest that must hit each business at ITS own opening time.
+  It must NOT use a fixed wall-clock timeout — it reads each business's working hours and exceptions
+  to decide which `PENDING` appointments are past their business-hours-aware deadline. `POST` only
+  (QStash posts; a `GET` would let a stray browser visit mutate appointment status), guarded by
+  `Authorization: Bearer $CRON_SECRET`.
+- The timeout logic is split three ways for the same reason `slots.ts` is pure: `expiry.ts` holds the
+  MATHS and touches no database, `expiry-sweep.ts` does the reads/writes and drives the digest, and
+  the route only authenticates. `digest-lock.ts` is separate because its failure mode is deliberately
+  different from the rest — it fails OPEN (see PROJECT_SPEC.md, 2026-08-16).
 - Push is split in two (Phase 5): `push.ts` only knows how to DELIVER a payload to one business's
   subscriptions and how to drop dead ones (HTTP 404/410); `push-notifications.ts` only knows what the
   two spec-mandated messages SAY (spec lines 36-38). The daily digest function lives there ready to be

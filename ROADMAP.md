@@ -156,12 +156,64 @@ onay/iptal sonrası sayfa yenilenmeden güncellendiği ve sıfırda kaybolmadı�
 Auth tarafında hâlâ YAPILMAYANLAR (spec satır 49'da geçiyor, ayrı bir faza ait):
 şifre sıfırlama, magic link alternatifi.
 
-## Faz 5 — Push bildirimleri
+> **v2 adayı: şifremi unuttum akışı + login brute-force koruması birlikte ele alınacak —
+> biri olmadan diğeri eksik/riskli kalıyor.** İkisi de v1'de BİLİNÇLİ olarak ertelendi
+> (2026-08-16). Bugün `POST /api/auth/login` için rate limit/backoff YOK ve şifre sıfırlama
+> akışı da YOK; bu ikisi tek bir işte ele alınmalıdır çünkü:
+> - Brute-force koruması tek başına eklenirse, kilitlenen veya şifresini unutan berberin
+>   kendi kendine kurtulma yolu olmaz (destek kanalı da yok).
+> - Şifre sıfırlama tek başına eklenirse, sıfırlama e-postası saldırganın deneyebileceği
+>   yeni bir yüzey açar ve giriş denemeleri hâlâ sınırsız kalır.
+
+## Faz 5 — Push bildirimleri ✅ TAMAMLANDI
 
 Spec dayanağı: satır 36-38. VAPID, Firebase yok, ücretsiz.
 
-- Yeni randevu talebi geldiğinde anında bildirim
-- Günlük özet: "N bekleyen randevunuz var" (dükkan açılışına yakın)
+- ✅ `src/lib/push.ts` — VAPID gönderim katmanı. Push servisi **404/410** dönerse ilgili
+  `PushSubscription` satırı SİLİNİR (ölü abonelikler yığılmaz); 429/5xx/ECONNREFUSED gibi
+  GEÇİCİ hatalarda silinmez. Yeniden deneme YOK, 10 sn soket zaman aşımı, TTL 6 saat.
+  Fonksiyon ASLA fırlatmaz — push yardımcı bir özelliktir, ana akışı bloklayamaz.
+- ✅ `src/lib/push-notifications.ts` — yalnızca bildirim İÇERİĞİ (tek sorumluluk):
+  - `yeniRandevuTalebiBildir(...)` — "Yeni randevu talebi" / "<ad>, <saat>". Randevu BUGÜNSE
+    sadece saat, başka günse gün de yazılır ("17 Ağustos 09:00"), işletmenin saat diliminde.
+  - `gunlukBekleyenOzetiGonder(businessId)` — spec satır 38'in fonksiyonu. PENDING sayar,
+    "N bekleyen randevunuz var" gönderir; **N=0 ise hiç göndermez**. Faz 6'daki cron BUNU
+    çağıracak; Faz 5'te hiçbir zamanlayıcı/cron kurulmadı (grep ile doğrulandı).
+- ✅ `POST /api/appointments` — 201 sonrası `after()` (next/server) ile bildirim tetiklenir.
+  Çıplak fire-and-forget DEĞİL: serverless'ta yanıttan sonra invocation dondurulur ve
+  gönderim yarıda kalırdı. Push başarısız olsa da randevu **201 döner** ve hata loglanır.
+- ✅ `public/sw.js` — service worker; `push` + `notificationclick` → `/dashboard/appointments?scope=pending`.
+- ✅ `PushAcmaButonu` panel KABUĞUNDA — dört sekmede de. Abonelik varsa "Bildirimler açık"
+  yazar; izin engellenmişse buton yerine açıklama gösterilir.
+
+**Spec'te yazmayan, kullanıcı onaylı kararlar (2026-08-16):** `VAPID_SUBJECT` =
+`mailto:akinc720@gmail.com`; gönderim hatasında yeniden deneme YOK (tek atış); bildirime
+tıklanınca `/dashboard/appointments?scope=pending` açılır; bekleyen 0 iken günlük özet
+gönderilmez; bildirim metninde bugün/başka gün ayrımı; buton kabukta sabit.
+
+**QA'nın bulduğu ve düzeltilen tasarım hatası:** VAPID değişkenleri ilk halde
+`serverEnv()`in monolitik şemasına eklenmişti; `prisma.ts` de `serverEnv()` çağırdığı için
+**bozuk tek bir VAPID değeri veritabanı bağlantısını ve dolayısıyla randevu almayı komple
+durduruyordu**. Ayrı bir `pushEnv()` şemasına çıkarıldı: artık bozuk push yapılandırması
+yalnızca push'u bozar. Route seviyesinde ölçüldü — `VAPID_SUBJECT` geçersizken
+`POST /api/appointments` **201** döndü, hata loglandı.
+
+Doğrulama durumu: `npm run build` ve `npx eslint src` temiz. Gönderim yolu, yerel bir sahte
+HTTPS push servisiyle GERÇEK `web-push` + gerçek VAPID JWT + gerçek aes128gcm şifrelemesi
+üzerinden ölçüldü ve yük ÇÖZÜLEREK metin doğrulandı (TTL 21600, urgency high). 410 → satır
+silindi; gerçek FCM'e sahte endpoint ile 404 dalı da doğrulandı; 10 sn zaman aşımı ölçüldü
+(10.096 ms). İşletmeler arası izolasyon: A'ya gönderim B'nin aboneliğini hiç OKUMUYOR.
+`VAPID_PRIVATE_KEY` panel HTML'lerinin hiçbirinde yok. Faz 2-4 regresyonu (14 endpoint,
+rozet sayacı, `wa.me` linki, rastgele token) temiz.
+
+> **Faz 5'te DOĞRULANAMAYANLAR** (tahmin üretilmedi, Faz 7'ye taşındı): geliştirme
+> makinesindeki Chrome'da `localhost:3000` için `Notification.permission === "denied"`
+> olduğu için izin ver → gerçek `pushManager.subscribe` → **ekranda gerçek bildirim**
+> zinciri hiç çalıştırılamadı. Buna bağlı olarak `notificationclick` yönlendirmesi ve
+> `tag`/`renotify` ile bildirim ezme davranışı da gözlenmedi. Doğrulanan sınır: `/sw.js`
+> 200 dönüyor ve kök scope'ta ACTIVATE oluyor; VAPID public anahtarının `Uint8Array`
+> çevrimini Chrome GEÇERLİ kabul etti (65 bayt, 0x04) ve `subscribe` yalnızca
+> `NotAllowedError` ile düştü — yani tek engel izindi.
 
 ## Faz 6 — Cron (zaman aşımı süpürmesi)
 
@@ -185,6 +237,11 @@ Bunlar ilgili fazda TEST EDİLEMEDİ (tahmini sonuç üretilmedi) ve burada kapa
   tıklama sorunu nedeniyle DOM click ile test edildi; React handler'ları aynı olduğu için
   fonksiyonel olarak geçerli sayıldı, ancak gerçek cihaz girdisi doğrulanmadı.
 - **Faz 3 — `read-limit.ts` dakikada 120 istek sınırı.** Hiç tetiklenmedi.
+- **Faz 5 — gerçek bir tarayıcı aboneliğiyle bildirimin EKRANDA görünmesi.** İzin verme →
+  `pushManager.subscribe` → `POST /api/push/subscribe` → bildirimin gösterilmesi →
+  bildirime tıklayınca `/dashboard/appointments?scope=pending` açılması → `tag`/`renotify`
+  ile eski bildirimin ezilmesi. Geliştirme makinesindeki Chrome'da localhost için bildirim
+  izni ENGELLİ olduğu için hiçbiri çalıştırılamadı.
 - **Faz 3 — Turnstile fail-open dalının kesintisiz ortamda 201 ile bitmesi.** Fail-open'ın
   tetiklendiği bir internet kesintisinde gözlendi, ama aynı kesintide Neon'a da
   ulaşılamadığı için istek 500 ile bitti; yalnızca "kontrol atlandı, akış devam etti"

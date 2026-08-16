@@ -14,6 +14,7 @@ import {
 
 import { KabukSaglayici } from "./shell-context";
 import { Hata, Yukleniyor } from "./form-ui";
+import { PushAcmaButonu } from "./push-toggle";
 
 const SEKMELER = [
   { yol: "/dashboard", etiket: "Bugün" },
@@ -29,7 +30,14 @@ const SEKMELER = [
  * sayısı HER ZAMAN görünür bir rozet ile gösterilir" diyor. Sayfaya konsaydı
  * hizmet/saat sekmelerinde kaybolurdu.
  */
-export function DashboardShell({ children }: { children: ReactNode }) {
+export function DashboardShell({
+  children,
+  vapidPublicKey,
+}: {
+  children: ReactNode;
+  /** VAPID public anahtarı; boşsa push arayüzü hiç gösterilmez (spec satır 36-38). */
+  vapidPublicKey: string;
+}) {
   const router = useRouter();
   const yol = usePathname();
 
@@ -153,6 +161,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             {bekleyenSayisi}
           </span>
         </Link>
+
+        {/* Spec satır 36-37: yeni randevu talebinde anında push. İzin ancak
+            kullanıcı hareketiyle istenebilir, bu yüzden ayrı bir buton gerekir. */}
+        {vapidPublicKey ? <PushAcmaButonu vapidPublicKey={vapidPublicKey} /> : null}
 
         <nav className="mb-6 -mx-4 overflow-x-auto px-4">
           <ul className="flex gap-2">

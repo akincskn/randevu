@@ -1,6 +1,7 @@
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 
 import { ApiError, toErrorResponse } from "@/lib/api-error";
+import { yeniRandevuTalebiBildir } from "@/lib/push-notifications";
 import { randevuCalismaSaatiIcindeMi } from "@/lib/availability";
 import { yerelAnHesapla } from "@/lib/timezone";
 import { APPOINTMENT_DTO_INCLUDE, toAppointmentDto } from "@/lib/dto";
@@ -119,6 +120,32 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Randevu oluştu — hak gerçekten kullanıldı, iade edilmeyecek.
     kotaTuketilenTelefon = null;
+
+    // Spec satır 37: berbere ANINDA push bildirimi.
+    //
+    // `after` ile YANIT GÖNDERİLDİKTEN SONRA çalışır: müşteri, berberin push
+    // servisinin yavaşlığını beklemez. Çıplak fire-and-forget (await'siz promise)
+    // serverless'ta yanlış olurdu — Vercel yanıttan sonra invocation'ı dondurur
+    // ve gönderim yarıda kalırdı; `after` ömrü uzatır (next/server, v15.1+ stabil).
+    //
+    // `yeniRandevuTalebiBildir` fırlatmaz, ama `after` geri çağrısını yine de
+    // korumaya alıyoruz: buradan kaçan bir hata randevunun kendisini etkilemez
+    // (yanıt çoktan gitti) ama sunucu logunda yakalanmamış promise olarak görünür.
+    after(async () => {
+      try {
+        const sonuc = await yeniRandevuTalebiBildir({
+          businessId: isletme.id,
+          timezone: isletme.timezone,
+          customerName: randevu.customerName,
+          startsAt: randevu.startsAt,
+        });
+        if (sonuc.basarisiz > 0) {
+          console.error("[appointments] yeni randevu bildirimi kısmen başarısız:", sonuc);
+        }
+      } catch (error) {
+        console.error("[appointments] yeni randevu bildirimi gönderilemedi:", error);
+      }
+    });
 
     return Response.json(toAppointmentDto(randevu), { status: 201 });
   } catch (error) {

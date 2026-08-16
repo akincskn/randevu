@@ -75,10 +75,13 @@ This is the required layout. Agents must not invent alternative structures.
 │   │   ├── dashboard-api.ts              # Typed fetch client used by the panel
 │   │   ├── format.ts                     # tr-TR date/time/price formatting
 │   │   ├── minute-time.ts                # minutes-from-midnight <-> "HH:MM"
-│   │   └── push.ts                       # Web Push helper (VAPID)
+│   │   ├── push.ts                       # Web Push transport (VAPID) + dead-subscription cleanup
+│   │   └── push-notifications.ts         # Notification CONTENT (new request, daily digest)
 │   └── components/
 │       ├── public/
 │       └── dashboard/
+├── public/
+│   └── sw.js                             # Service worker: push + notificationclick
 └── package.json
 ```
 
@@ -100,5 +103,11 @@ This is the required layout. Agents must not invent alternative structures.
 - `api/cron/expire-appointments` is called on a schedule (Vercel Cron or Upstash QStash, both free-tier
   viable). It must NOT use a fixed wall-clock timeout — it reads each business's working hours and
   exceptions to decide which `PENDING` appointments are past their business-hours-aware deadline.
+- Push is split in two (Phase 5): `push.ts` only knows how to DELIVER a payload to one business's
+  subscriptions and how to drop dead ones (HTTP 404/410); `push-notifications.ts` only knows what the
+  two spec-mandated messages SAY (spec lines 36-38). The daily digest function lives there ready to be
+  called — its SCHEDULER is Phase 6's job and no timer exists in Phase 5.
+- `public/sw.js` is hand-authored browser JavaScript, not part of the Next.js bundle. It must be served
+  from the root so its service-worker scope covers the whole site.
 - No route may query Prisma directly from a page component for public-facing pages — always go through
   `api/` + DTO layer, per `CLAUDE.md` rule 2.

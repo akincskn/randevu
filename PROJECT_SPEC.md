@@ -94,6 +94,11 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   booking sayfasında ve slot üretecinde görünmez; geçmiş randevuları olduğu gibi kalır.
   Randevusu olan hizmeti silme denemesi 409 ile reddedilir ve pasife alma önerilir.
   2026-08-16 onaylandı
+- Login brute-force koruması (rate limit/backoff) ve "şifremi unuttum" akışı v1'de YOK,
+  bilinçli olarak ertelendi; v2'de BİRLİKTE ele alınacak — biri olmadan diğeri eksik/riskli
+  kalıyor. Yalnızca brute-force koruması eklenirse kilitlenen berberin kendini kurtarma yolu
+  olmaz; yalnızca şifre sıfırlama eklenirse giriş denemeleri sınırsız kalırken yeni bir
+  saldırı yüzeyi açılır. 2026-08-16 onaylandı
 - Turnstile widget'ı İSTEMCİDE yüklenemezse (reklam engelleyici, CDN erişimi yok) gönderim
   KİLİTLİ kalır ve kullanıcıya görünür bir hata gösterilir. Sunucu tarafı fail-open
   politikası (yukarıdaki madde) burada GEÇERLİ DEĞİLDİR: "Cloudflare'e ulaşamadık" bizim

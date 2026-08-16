@@ -110,6 +110,17 @@ export const randevuOnayla = (id: string): Promise<OnayYaniti> =>
 export const randevuIptalEt = (id: string): Promise<AppointmentDto> =>
   dashboardYaz<AppointmentDto>(`/api/appointments/${encodeURIComponent(id)}/cancel`, "PATCH", {});
 
+/** Tarayıcının ürettiği push aboneliğini sunucuya kaydeder (spec satır 36-38). */
+export interface PushAbonelikGirdisi {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+export const pushAbonelikKaydet = (
+  girdi: PushAbonelikGirdisi,
+): Promise<{ endpoint: string; createdAt: string }> =>
+  dashboardYaz<{ endpoint: string; createdAt: string }>("/api/push/subscribe", "POST", girdi);
+
 export const hizmetleriGetir = (): Promise<{ services: ServiceAdminDto[] }> =>
   dashboardIstek<{ services: ServiceAdminDto[] }>("/api/services");
 

@@ -148,6 +148,11 @@ Neon ve gerçek Chrome ile çalıştırdı; yetki izolasyonunda açık YOK (A i�
 hizmetine/randevusuna/istisnasına 404 veya 403 alıyor). Rozetin dört sekmede de göründüğü,
 onay/iptal sonrası sayfa yenilenmeden güncellendiği ve sıfırda kaybolmadığı doğrulandı.
 
+> **Faz 4 dashboard'u gerçek fare/dokunmatik girdisiyle henüz doğrulanmadı.** QA'da CDP
+> senkron tıklama sorunu nedeniyle DOM click ile test edildi. React handler'ları aynı olduğu
+> için fonksiyonel olarak geçerli sayıldı, ama gerçek cihaz testi Faz 7'ye (uçtan uca QA)
+> taşınsın.
+
 Auth tarafında hâlâ YAPILMAYANLAR (spec satır 49'da geçiyor, ayrı bir faza ait):
 şifre sıfırlama, magic link alternatifi.
 
@@ -171,6 +176,19 @@ Spec dayanağı: `PROJECT_SPEC.md`'nin tamamı — tüm acceptance criteria.
 
 Kapsam dışı maddelerin (satır 52-59) sızmadığının ve v2 maddelerinin (satır 61-66)
 implement edilmediğinin doğrulanması dahil.
+
+### Önceki fazlardan taşınan, henüz doğrulanmamış maddeler
+
+Bunlar ilgili fazda TEST EDİLEMEDİ (tahmini sonuç üretilmedi) ve burada kapatılmalı:
+
+- **Faz 4 — dashboard'un gerçek fare/dokunmatik girdisiyle testi.** QA'da CDP senkron
+  tıklama sorunu nedeniyle DOM click ile test edildi; React handler'ları aynı olduğu için
+  fonksiyonel olarak geçerli sayıldı, ancak gerçek cihaz girdisi doğrulanmadı.
+- **Faz 3 — `read-limit.ts` dakikada 120 istek sınırı.** Hiç tetiklenmedi.
+- **Faz 3 — Turnstile fail-open dalının kesintisiz ortamda 201 ile bitmesi.** Fail-open'ın
+  tetiklendiği bir internet kesintisinde gözlendi, ama aynı kesintide Neon'a da
+  ulaşılamadığı için istek 500 ile bitti; yalnızca "kontrol atlandı, akış devam etti"
+  kanıtlandı.
 
 ## Faz 8 — İlk deploy
 

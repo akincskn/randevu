@@ -70,16 +70,32 @@ self.addEventListener("notificationclick", (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((pencereler) => {
+      const ayniKaynak = pencereler.filter(
+        (pencere) => new URL(pencere.url).origin === self.location.origin,
+      );
+
       // Panel zaten açıksa YENİ SEKME AÇMA: var olanı öne getirip yönlendir.
-      for (const pencere of pencereler) {
-        if (new URL(pencere.url).origin === self.location.origin) {
-          return pencere.focus().then((odaklanan) => {
+      //
+      // `navigate()` YALNIZCA bu worker'ın KONTROL ETTİĞİ istemcilerde çalışır;
+      // kontrolsüz bir sekmede TypeError ile reddedilir. Bu sık görülen bir
+      // durumdur: worker kaydedilmeden önce açılmış her sekme kontrolsüzdür ve
+      // ilk yenilemeye kadar öyle kalır. Yakalanmazsa tıklama SESSİZCE hiçbir
+      // şey yapmaz — bu yüzden başarısızlıkta yeni sekme açmaya düşülür.
+      const yonlendir = (pencere) =>
+        Promise.resolve(pencere.focus())
+          .then((odaklanan) => {
             const hedefPencere = odaklanan || pencere;
-            return hedefPencere.navigate ? hedefPencere.navigate(hedef) : undefined;
+            if (!hedefPencere.navigate) {
+              throw new Error("navigate() desteklenmiyor");
+            }
+            return hedefPencere.navigate(hedef);
+          })
+          .catch((hata) => {
+            console.error("[sw] mevcut sekme yönlendirilemedi, yeni sekme açılıyor:", hata);
+            return clients.openWindow(hedef);
           });
-        }
-      }
-      return clients.openWindow(hedef);
+
+      return ayniKaynak.length > 0 ? yonlendir(ayniKaynak[0]) : clients.openWindow(hedef);
     }),
   );
 });

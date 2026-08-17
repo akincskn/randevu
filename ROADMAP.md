@@ -510,6 +510,74 @@ Karara bağlanmadı — kullanıcıya sorulmalı.
 > bugün sınırsız denemeye açık olduğunu ölçtü. FAIL sayılmadı çünkü bilinçli bir karar,
 > ama canlıda duran bir risktir.
 
-## Faz 8 — İlk deploy
+## Faz 8 — İlk deploy ✅ TAMAMLANDI (2026-08-17)
 
 Vercel free tier (`CLAUDE.md` §1). Ortam değişkenleri, Neon bağlantısı, cron yapılandırması.
+
+**Canlı adres:** https://randevu-five.vercel.app
+(alias'lar: `randevu-akincskns-projects.vercel.app`, `randevu-git-main-akincskns-projects.vercel.app`)
+
+### Deploy sırasında çıkan ve düzeltilen kusurlar
+
+1. **Build tip kontrolünde 31 hatayla düştü** — Prisma 7 kurulumda Client'ı artık
+   kendiliğinden üretmiyor, temiz CI kurulumunda `@prisma/client` hiçbir tip export
+   etmiyordu (`has no exported member 'PrismaClient' / 'Appointment' / 'WorkingHours'`).
+   Yerelde `node_modules`'daki üretilmiş client yüzünden görünmüyordu.
+   Düzeltme: `build` script'i `prisma generate && next build`. `postinstall` DEĞİL —
+   Vercel node_modules cache'i isabet ettiğinde postinstall atlanır, build adımı atlanmaz.
+2. **Onay mesajındaki emojiler `�` oluyordu** — `wa.me` isteği 302 ile `api.whatsapp.com`'a
+   yönlendirirken `text` parametresindeki BMP dışı karakterleri U+FFFD'ye çeviriyor
+   (`?text=%F0%9F%93%85` -> `Location: ...&text=%EF%BF%BD`). Kaynak dosyanın baytları
+   doğru UTF-8'di. Düzeltme: link doğrudan `api.whatsapp.com/send/` üretiyor (yönlendirme
+   yok, 200). Gerekçe `PROJECT_SPEC.md` "Onaylanan Çıkarımlar"a kaydedildi.
+
+### Deploy dışı yapılandırma engelleri (kod kusuru değil)
+
+- **Vercel Deployment Protection** production'da açıktı, her istek SSO'ya 302 atıyordu —
+  müşteri sayfası da cron endpoint'i de erişilemezdi. Kullanıcı kapattı.
+- **Cloudflare Turnstile** production hostname'lerini tanımıyordu (`Error: 110200`,
+  domain not allowed). Gönderim butonu KİLİTLİ kaldı — bu spec'in 2026-08-15 kararının
+  doğru davranışı (istemci tarafı fail-open YOK). Kullanıcı hostname'leri ekledi.
+
+### Uçtan uca smoke test (gerçek production, gerçek tarayıcı)
+
+Public sayfa -> hizmet/gün/saat seçimi -> Turnstile -> randevu talebi -> panelde rozet ->
+onay -> WhatsApp linki -> müşteri detay ekranı zincirinin tamamı koşturuldu:
+
+- Turnstile "Başarılı!", talep `PENDING` oluştu, `publicToken` 43 karakter rastgele.
+- Geçmiş saat filtresi canlıda ölçüldü: saat ~16:0x iken slot listesi 16:20'den başladı.
+- Panelde "1 randevu onayınızı bekliyor" rozeti; onay sonrası 0'a düştü, satır "Onaylandı".
+- Veritabanında `status: CONFIRMED`, `startsAt` doğru (15:20Z = 18:20 Europe/Istanbul).
+- **`whatsappUrl` production domain'ini taşıyor, `localhost` DEĞİL** —
+  `NEXT_PUBLIC_APP_URL` girilmemiş olmasına rağmen `request.nextUrl.origin` fallback'i
+  doğru çalışıyor.
+- Mesajdaki detay linki gerçekten açıldı: "Randevunuz onaylandı" ekranı geldi.
+- İkinci randevu alınırken 18:20 slotu listede YOKTU — `Appointment_no_overlap_excl`
+  canlıda da slotu tutuyor.
+- Tarayıcı konsolunda hata yok.
+
+### QStash zamanlaması ✅
+
+`*/15 * * * *` -> `POST https://randevu-five.vercel.app/api/cron/expire-appointments`,
+`Upstash-Forward-Authorization: Bearer <CRON_SECRET>` ile. **17:00 turu Upstash konsolunda
+"Delivered", 3 sn, hata yok** (kullanıcı doğrudan gözlemledi). Sırsız POST'un 401
+`{"code":"UNAUTHORIZED"}` döndüğü ayrıca ölçüldü — koruma çalışıyor.
+
+Not: `vercel logs` CLI'ı bu projede güvenilir değil (bilinen 4+ istekten yalnızca 1'ini
+gösterdi ve 5 dakikada kendini kesiyor). Cron doğrulaması bu yüzden Upstash konsolundan
+yapıldı; ileride runtime log kontrolü için Vercel dashboard Observability kullanılmalı.
+
+### Emoji encoding doğrulamasının sınırı — bilinen ve kabul edilen
+
+Emoji encoding, URL/bayt seviyesinde iki ayrı yöntemle doğrulandı (HTML analizi +
+production round-trip). WhatsApp'ın kendi önizleme sayfasındaki görsel render kaybı
+(WhatsApp'ın kontrolü dışında, url encoding'i etkilemiyor) bilinen ve kabul edilen bir
+sınır — gerçek mesaj kutusunda göz ile doğrulanmadı, deploy'u bloke etmiyor.
+
+### Faz 7'den devredilen 3 maddenin durumu
+
+1. Günlük özet bildiriminin EKRANDA görülmesi — hâlâ göz ile teyit edilmedi (v1'i bloke
+   etmiyor; sunucudan gerçek FCM'e teslimat Faz 7'de ölçülmüştü).
+2. QStash zamanlamasının kaydı ve ilk turun canlı logu — ✅ KAPANDI (yukarıda).
+3. "Yeni randevu talebi" push'unun yeniden ölçümü — hâlâ ölçülmedi; test işletmesinin
+   push aboneliği yok, `after()` no-op'a düşüyor. Faz 5'te doğrulanmıştı.

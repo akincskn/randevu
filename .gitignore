@@ -48,3 +48,6 @@ qa-tmp-*.mjs
 
 # Playwright MCP oturum ciktilari (snapshot/console/screenshot) — uygulama kodu degil
 .playwright-mcp/
+
+# Claude Code makine-yerel izinleri — kisiye ozel, paylasilmaz
+.claude/settings.local.json

@@ -133,3 +133,10 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   politikası (yukarıdaki madde) burada GEÇERLİ DEĞİLDİR: "Cloudflare'e ulaşamadık" bizim
   altyapı sorunumuzdur ve atlanabilir, ancak "istemci hiç doğrulama yapmadı" bot korumasının
   tamamen devre dışı kalması demektir. Sessiz kilitlenme yasak. 2026-08-15 onaylandı
+- **Olmayan slug 404, geçersiz `publicToken` 200-ama-indekslenmez** — iki "bulunamadı"
+  durumu semantik olarak farklıdır ve farklı yanıt verir. Olmayan bir işletme slug'ı
+  gerçekten yok olan bir adrestir: `notFound()` ile 404. Geçersiz/eski bir `publicToken`
+  ise tahmin edilemez olduğu için "böyle bir sayfa yok" değil "böyle bir kayıt yok"
+  anlamına gelir; randevu detay sayfası 200 döner, istemci tarafındaki
+  "Randevu bulunamadı." mesajı gösterilir ve sayfa `generateMetadata` içinde
+  `robots: { index: false }` ile arama motorlarına kapatılır. 2026-08-17 onaylandı

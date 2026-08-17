@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import { AppointmentDetail } from "@/components/public/appointment-detail";
 
-export const metadata: Metadata = { title: "Randevu detayı" };
+/**
+ * Bu sayfa arama motorlarına KAPALIDIR. Geçersiz bir `publicToken` için `notFound()`
+ * ÇAĞRILMAZ: slug'dan farklı olarak token tahmin edilemez, dolayısıyla geçersiz token
+ * "sayfa yok" değil "kayıt yok" demektir. Sayfa 200 döner, istemci tarafındaki
+ * "Randevu bulunamadı." mesajı gösterilir, `robots: { index: false }` ile de indekslenmez.
+ * Karşılaştırma: olmayan işletme slug'ı gerçekten 404'tür.
+ */
+export function generateMetadata(): Metadata {
+  return { title: "Randevu detayı", robots: { index: false } };
+}
 
 /**
  * Müşteri randevu detay ekranı — spec satır 30 ("saat, hizmet, adres").

@@ -73,6 +73,7 @@ npm run dev                 # http://localhost:3000
 | `VAPID_PUBLIC_KEY` | push için | `web-push` `generateVAPIDKeys()` çıktısı |
 | `VAPID_PRIVATE_KEY` | push için | Aynı çiftin gizli tarafı — değişirse tüm abonelikler geçersizleşir |
 | `VAPID_SUBJECT` | push için | `mailto:` veya `https://` ile başlamalı (VAPID spesifikasyonu) |
+| `NEXT_PUBLIC_APP_URL` | hayır | WhatsApp mesajındaki randevu detay linkinin kök adresi. Verilmezse isteğin kendi origin'i kullanılır (Vercel'de doğru domain'i verir); özel bir alan adı arkasındaysanız açıkça ayarlayın |
 
 Rastgele sır üretmek için:
 

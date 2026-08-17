@@ -51,3 +51,5 @@ qa-tmp-*.mjs
 
 # Claude Code makine-yerel izinleri — kisiye ozel, paylasilmaz
 .claude/settings.local.json
+
+.vercel

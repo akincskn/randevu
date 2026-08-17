@@ -1,15 +1,22 @@
 import type { AppointmentDto } from "./dto";
 
 /**
- * Spec satır 27-29: onay sonrası ekranda bir `wa.me` linki belirir; berber tıklar,
+ * Spec satır 27-29: onay sonrası ekranda bir WhatsApp linki belirir; berber tıklar,
  * KENDİ WhatsApp'ı açılır, mesajı MANUEL gönderir.
  *
  * WhatsApp Business API YOK, resmi entegrasyon YOK, otomatik gönderim YOK
  * (spec satır 55 bunu açıkça kapsam dışı bırakıyor). Burada üretilen tek şey
  * bir URL'dir — bu modül hiçbir mesaj göndermez, dış servise çağrı yapmaz.
+ *
+ * Hedef `wa.me` DEĞİL, `api.whatsapp.com/send/`dir. Gerekçe ölçülmüştür: `wa.me`
+ * isteği 302 ile `api.whatsapp.com`'a yönlendirirken `text` parametresindeki
+ * BMP dışı karakterleri (📅 ✂️ 📍) U+FFFD'ye çeviriyor —
+ *   istek  ...?text=%F0%9F%93%85 -> Location: ...&text=%EF%BF%BD
+ * Aynı adres doğrudan çağrıldığında yönlendirme hiç olmuyor (200) ve emoji
+ * bozulmadan geçiyor. Türkçe karakterler her iki yolda da sağlamdı.
  */
 
-/** wa.me uluslararası biçim ister: baştaki + ve ayraçlar olmadan, ülke kodu dahil. */
+/** WhatsApp uluslararası biçim ister: baştaki + ve ayraçlar olmadan, ülke kodu dahil. */
 function waNumaraBicimle(ulusalNumara: string): string {
   const rakamlar = ulusalNumara.replace(/\D/g, "");
   return rakamlar.startsWith("90") ? rakamlar : `90${rakamlar}`;
@@ -27,7 +34,7 @@ function tarihBicimle(isoAn: string, timezone: string): string {
 }
 
 /**
- * Onay mesajının hazır metnini ve `wa.me` linkini üretir (spec satır 27).
+ * Onay mesajının hazır metnini ve WhatsApp linkini üretir (spec satır 27).
  *
  * @param detayUrl Müşterinin randevu detayını göreceği public link (spec satır 30).
  */
@@ -52,5 +59,6 @@ export function onayWhatsappLinki(
   satirlar.push("", `Randevu detayı: ${detayUrl}`);
 
   const metin = encodeURIComponent(satirlar.join("\n"));
-  return `https://wa.me/${waNumaraBicimle(randevu.customerPhone)}?text=${metin}`;
+  const numara = waNumaraBicimle(randevu.customerPhone);
+  return `https://api.whatsapp.com/send/?phone=${numara}&text=${metin}&type=phone_number&app_absent=0`;
 }

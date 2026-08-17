@@ -140,3 +140,12 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   anlamına gelir; randevu detay sayfası 200 döner, istemci tarafındaki
   "Randevu bulunamadı." mesajı gösterilir ve sayfa `generateMetadata` içinde
   `robots: { index: false }` ile arama motorlarına kapatılır. 2026-08-17 onaylandı
+- **Onay linki `wa.me` yerine `api.whatsapp.com/send/` üretir** — spec satır 27 lafzen
+  "`wa.me` linki" diyor, hedef adres değişti, davranış aynı kaldı (berber tıklar, kendi
+  WhatsApp'ı hazır metinle açılır, MANUEL gönderir; satır 55 hâlâ geçerli, resmi API yok).
+  Gerekçe ölçümdür, tercih değil: `wa.me` isteği 302 ile `api.whatsapp.com`'a yönlendirirken
+  `text` parametresindeki BMP dışı karakterleri bozuyor —
+  `?text=%F0%9F%93%85` gönderildiğinde `Location: ...&text=%EF%BF%BD` dönüyor, yani
+  mesajdaki 📅 ✂️ 📍 berbere `�` olarak görünüyordu. Aynı adres doğrudan çağrıldığında
+  yönlendirme hiç olmuyor (200) ve emoji bozulmadan iletiliyor. Türkçe karakterler her iki
+  yolda da sağlamdı. 2026-08-17 onaylandı

@@ -7,6 +7,7 @@ import { fiyatBicimle, saatBicimle, tarihSaatBicimle } from "@/lib/format";
 import { PublicApiError, randevuGetir, randevuIptalEt } from "@/lib/public-api";
 
 import { durumGorunumu } from "./appointment-status";
+import { SayfaLinki } from "./page-link";
 import { HataKutusu, Yukleniyor } from "./ui";
 
 /**
@@ -67,6 +68,8 @@ export function AppointmentDetail({ token }: { token: string }) {
         <h1 className="text-lg font-bold">{gorunum.baslik}</h1>
         <p className="mt-1 text-sm">{gorunum.aciklama}</p>
       </div>
+
+      <SayfaLinki aciklama={gorunum.linkAciklamasi} />
 
       <dl className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
         <Satir etiket="Tarih ve saat">

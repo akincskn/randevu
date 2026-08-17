@@ -18,7 +18,17 @@ export interface DurumGorunumu {
   aciklama: string;
   sinif: string;
   iptalEdilebilir: boolean;
+  /**
+   * Sayfa adresi kutusunun üstündeki cümle (bkz. `page-link.tsx`). Adres altı
+   * durumda da gösterilir — müşterinin hesabı yoktur, bu link randevuya geri
+   * dönmesinin tek yoludur (spec satır 50). Ancak "kontrol edebilirsiniz" ifadesi
+   * düşmüş bir randevu için yanıltıcı olacağından metin duruma göre ayrılır.
+   */
+  linkAciklamasi: string;
 }
+
+const AKTIF_LINK = "Randevunuzu bu sayfadan kontrol edebilirsiniz:";
+const ARSIV_LINK = "Bu sayfanın adresi:";
 
 const BEKLEME =
   "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-100";
@@ -30,40 +40,45 @@ const NOTR =
 const GORUNUMLER: Record<Durum, DurumGorunumu> = {
   PENDING: {
     baslik: "Talebiniz alındı",
-    aciklama:
-      "Berber onayladığında WhatsApp üzerinden bilgilendirileceksiniz. Bu sayfayı saklayın.",
+    aciklama: "Berber onayladığında WhatsApp üzerinden bilgilendirileceksiniz.",
     sinif: BEKLEME,
     iptalEdilebilir: true,
+    linkAciklamasi: AKTIF_LINK,
   },
   CONFIRMED: {
     baslik: "Randevunuz onaylandı",
     aciklama: "Sizi belirtilen saatte bekliyoruz.",
     sinif: OLUMLU,
     iptalEdilebilir: true,
+    linkAciklamasi: AKTIF_LINK,
   },
   CANCELLED: {
     baslik: "Randevu iptal edildi",
     aciklama: "Bu randevu iptal edilmiştir. Yeni bir randevu oluşturabilirsiniz.",
     sinif: NOTR,
     iptalEdilebilir: false,
+    linkAciklamasi: ARSIV_LINK,
   },
   EXPIRED: {
     baslik: "Talebin süresi doldu",
     aciklama: "Bu talep zamanında onaylanmadığı için düştü. Yeni bir randevu oluşturabilirsiniz.",
     sinif: NOTR,
     iptalEdilebilir: false,
+    linkAciklamasi: ARSIV_LINK,
   },
   COMPLETED: {
     baslik: "Randevu tamamlandı",
     aciklama: "Bu randevu gerçekleşti.",
     sinif: NOTR,
     iptalEdilebilir: false,
+    linkAciklamasi: ARSIV_LINK,
   },
   NO_SHOW: {
     baslik: "Randevuya gelinmedi",
     aciklama: "Bu randevu gelinmedi olarak işaretlendi.",
     sinif: NOTR,
     iptalEdilebilir: false,
+    linkAciklamasi: ARSIV_LINK,
   },
 };
 

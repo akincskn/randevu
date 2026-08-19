@@ -4,7 +4,7 @@ import { AppointmentList } from "@/components/dashboard/appointment-list";
 export const metadata: Metadata = { title: "Bugün" };
 
 /**
- * Panel ana sayfası — spec satır 24 (bekleyen randevular) + satır 58 (rozet).
+ * Panel ana sayfası — spec satır 24 (bekleyen randevular) + satır 68 (rozet).
  *
  * Rozet bu sayfada DEĞİL, layout'ta durur (`components/dashboard/shell.tsx`):
  * spec "her zaman görünür" dediği için tüm sekmelerde kalması gerekir.

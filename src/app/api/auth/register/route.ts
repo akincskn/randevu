@@ -8,7 +8,7 @@ import { sessionCookieHeader, sessionTokenUret } from "@/lib/session";
 import { slugSonekEkle, slugTemelUret } from "@/lib/slug";
 
 /**
- * POST /api/auth/register — berber hesabı + Business kaydı (spec satır 15-16, 68).
+ * POST /api/auth/register — berber hesabı + Business kaydı (spec satır 15-16, 78).
  *
  * Faz 2 kapsamı API-only; kayıt SAYFASI Faz 4'te (bkz. ROADMAP.md).
  */

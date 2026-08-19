@@ -5,7 +5,7 @@ import { serverEnv } from "./env";
 /**
  * Upstash Redis istemcisi ve paylaşılan sayaç primitifi.
  *
- * Hem randevu kotası (`rate-limit.ts`, spec satır 64) hem public okuma limiti
+ * Hem randevu kotası (`rate-limit.ts`, spec satır 74) hem public okuma limiti
  * (`read-limit.ts`, CLAUDE.md §2) buradan geçer — iki ayrı `Redis` örneği
  * açmak gereksiz bağlantı ve iki ayrı kopya Lua script'i demekti.
  */

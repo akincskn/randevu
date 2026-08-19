@@ -17,12 +17,12 @@ import { onayWhatsappLinki } from "@/lib/whatsapp";
  *
  *   1. Turnstile YOK — istek oturum cookie'siyle korunuyor; bot doğrulaması
  *      giriş yapmış bir berber için anlamsızdır.
- *   2. Rate limit YOK — günlük telefon kotası (spec satır 64) müşteri kötüye
+ *   2. Rate limit YOK — günlük telefon kotası (spec satır 74) müşteri kötüye
  *      kullanımına karşıdır. Berberin kendi defterine yazma hızını sınırlamak,
  *      yoğun bir günde kendi panelini kilitlemek olurdu.
  *   3. Durum doğrudan CONFIRMED — berber randevuyu telefonda/yüz yüze zaten
  *      onaylamıştır. PENDING yazmak, kendi kendini onaylamasını bekletmek ve
- *      rozeti (spec satır 58) sahte bir sayıyla şişirmek olurdu. Yan etki:
+ *      rozeti (spec satır 68) sahte bir sayıyla şişirmek olurdu. Yan etki:
  *      CONFIRMED kayıt zaman aşımı süpürmesinin (yalnızca PENDING'e bakar)
  *      dışında kalır — istenen davranış budur.
  *   4. **ÇALIŞMA SAATİ / İSTİSNA KONTROLÜ BİLİNÇLİ OLARAK BYPASS EDİLİR** —
@@ -36,7 +36,7 @@ import { onayWhatsappLinki } from "@/lib/whatsapp";
  *     çakışma 409 SLOT_TAKEN döner (CLAUDE.md §2, `toErrorResponse`).
  *   - Geçmiş saate randevu yazılamaz (kullanıcı kararı, 2026-08-19).
  *   - Yalnızca `isActive: true` hizmet seçilebilir (kullanıcı kararı, 2026-08-19).
- *   - `publicToken` kriptografik rastgele üretilir (spec satır 62).
+ *   - `publicToken` kriptografik rastgele üretilir (spec satır 71).
  */
 export async function POST(request: NextRequest): Promise<Response> {
   try {
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     const dto = toAppointmentDto(randevu);
 
     // Push bildirimi GÖNDERİLMEZ: bildirimin alıcısı berberin kendisidir ve bu
-    // randevuyu az önce o oluşturdu (spec satır 56 "yeni randevu TALEBİ" içindir).
+    // randevuyu az önce o oluşturdu (spec satır 66 "yeni randevu TALEBİ" içindir).
     //
     // `whatsappUrl` yanıtta döner ama kullanımı OPSİYONELDİR — berber isterse
     // müşteriye onay mesajı gönderir. Onay akışıyla aynı üretici kullanılır

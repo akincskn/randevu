@@ -9,7 +9,7 @@ import { okumaKotasiTuket } from "@/lib/read-limit";
  * GET /api/businesses/[slug] — public booking sayfasının açılış verisi (spec satır 22).
  *
  * İşletme bilgisi + hizmet listesini döner. Sayfa Prisma'ya DOĞRUDAN erişemez
- * (STRUCTURE.md satır 78-79); public veri her zaman bu katmandan ve DTO'dan geçer.
+ * (STRUCTURE.md satır 88-89); public veri her zaman bu katmandan ve DTO'dan geçer.
  */
 export async function GET(
   request: NextRequest,

@@ -84,7 +84,7 @@ This is the required layout. Agents must not invent alternative structures.
 │   │   ├── digest-lock.ts                # Redis NX once-per-local-day guard for the digest
 │   │   └── cron-auth.ts                  # Bearer CRON_SECRET check (timing-safe)
 │   └── components/
-│       ├── public/
+│       ├── public/                       # DatePicker/SlotPicker/useAvailability also reused by the panel
 │       └── dashboard/
 ├── public/
 │   └── sw.js                             # Service worker: push + notificationclick
@@ -130,7 +130,12 @@ This is the required layout. Agents must not invent alternative structures.
   and a deliberate working-hours bypass); branching one handler on a caller-supplied flag would have put
   the bypass one boolean away from the public path. Added 2026-08-19 with the scope addition recorded in
   PROJECT_SPEC.md "Randevu akışı" item 5.
-- `manual-appointment-form.tsx` is split from `manual-appointment-fields.tsx` purely to stay under the
-  200-line limit in CLAUDE.md §2 (combined: 219 lines); the split is by responsibility — the fields file
-  holds no request or state logic.
+- `manual-appointment-form.tsx` is split from `manual-appointment-fields.tsx`, `use-active-services.ts`,
+  and (for the shell) `pending-badge.tsx` purely to stay under the 200-line limit in CLAUDE.md §2; each
+  split is by responsibility — the fields file holds no request or state logic, the hook holds no markup.
+- The dashboard manual-booking form imports `DatePicker`, `SlotPicker`, and `useAvailability` from
+  `components/public/` rather than copying them. `form-ui.tsx` and `public/ui.tsx` stay separate because
+  they are different design surfaces, but these three are not styling — they are the SAME availability
+  data. A second implementation would drift and let the barber pick a slot customers cannot see
+  (user decision, 2026-08-20).
 

@@ -8,7 +8,7 @@ import { oturumZorunlu } from "@/lib/session";
 /**
  * POST /api/push/subscribe — berberin tarayıcı push aboneliğini kaydeder.
  *
- * Spec satır 55-57 (VAPID, Firebase YOK). Bu uç yalnızca aboneliği SAKLAR;
+ * Spec satır 65-67 (VAPID, Firebase YOK). Bu uç yalnızca aboneliği SAKLAR;
  * bildirim GÖNDERİMİ Faz 5'in konusudur (bkz. ROADMAP.md).
  */
 export async function POST(request: NextRequest): Promise<Response> {

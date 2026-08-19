@@ -47,7 +47,7 @@ export function serverEnv(): z.infer<typeof serverEnvSchema> {
 }
 
 /**
- * Web Push (VAPID) ortam değişkenleri — spec satır 55-57, Firebase YOK.
+ * Web Push (VAPID) ortam değişkenleri — spec satır 65-67, Firebase YOK.
  *
  * AYRI bir şema ve AYRI bir okuyucu, kasten. `serverEnvSchema`'ya konsalardı
  * bozuk tek bir VAPID değeri `serverEnv()`i komple fırlatır ve o fonksiyonu
@@ -92,7 +92,7 @@ export function pushEnv(): z.infer<typeof pushEnvSchema> {
 }
 
 /**
- * Cron ortak sırrı — Faz 6, spec satır 51-54'teki süpürmenin koruması.
+ * Cron ortak sırrı — Faz 6, spec satır 61-64'teki süpürmenin koruması.
  *
  * `pushEnv()` ile AYNI gerekçeyle AYRI bir şema: `serverEnv()`e konsaydı,
  * eksik bir `CRON_SECRET` `prisma.ts` üzerinden veritabanı bağlantısını ve

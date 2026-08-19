@@ -9,7 +9,7 @@ import type {
 /**
  * Public sayfaların API istemcisi.
  *
- * Sayfalar Prisma'ya DOĞRUDAN erişemez (STRUCTURE.md satır 78-79); tüm public veri
+ * Sayfalar Prisma'ya DOĞRUDAN erişemez (STRUCTURE.md satır 88-89); tüm public veri
  * `api/` + DTO katmanından geçer. Bu modül o çağrıların TEK yeri — her bileşenin
  * kendi `fetch`'ini yazması hata mesajı ve timeout davranışını dağıtırdı.
  */

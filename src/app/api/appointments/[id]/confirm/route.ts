@@ -11,7 +11,7 @@ import { onayWhatsappLinki } from "@/lib/whatsapp";
  * PATCH /api/appointments/[id]/confirm — berber randevuyu onaylar (spec satır 25-29).
  *
  * Yanıtta `whatsappUrl` döner; mesajı GÖNDERMEZ. Berber linke tıklayıp kendi
- * WhatsApp'ından manuel gönderir (spec satır 28-29, satır 74: resmi API kapsam dışı).
+ * WhatsApp'ından manuel gönderir (spec satır 28-29, satır 84: resmi API kapsam dışı).
  *
  * Next.js 16: dinamik segment `params` bir Promise'tir, await edilmelidir.
  */

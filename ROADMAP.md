@@ -15,7 +15,7 @@ dayanarak eklenemez (bkz. `CLAUDE.md` §0 Zero-Ambiguity Protocol).
 ## Faz 1 — Veritabanı ✅ TAMAMLANDI
 
 Spec dayanağı: satır 14-19 (Business, hizmet listesi, çalışma saatleri, istisnalar),
-satır 62-63 (slot çakışmasının veritabanı seviyesinde engellenmesi).
+satır 72-73 (slot çakışmasının veritabanı seviyesinde engellenmesi).
 
 - Prisma 7 + Neon PostgreSQL kurulumu, `prisma.config.ts` (`DIRECT_URL` ile migration)
 - 6 model: `Business`, `Service`, `WorkingHours`, `WorkingHoursException`,
@@ -28,8 +28,8 @@ satır 62-63 (slot çakışmasının veritabanı seviyesinde engellenmesi).
 ## Faz 2 — API Routes + Minimal Auth (API-only, UI Faz 4'te) ✅ TAMAMLANDI
 
 Spec dayanağı: satır 22-23 (randevu talebi oluşturma), satır 25-29 (onay + `wa.me` linki),
-satır 60-65 (güvenlik: rastgele token, rate limiting, bot doğrulaması), satır 55-57 (push aboneliği),
-**satır 67-68 (berber kimlik doğrulaması — yalnızca API katmanı)**.
+satır 70-75 (güvenlik: rastgele token, rate limiting, bot doğrulaması), satır 65-67 (push aboneliği),
+**satır 77-78 (berber kimlik doğrulaması — yalnızca API katmanı)**.
 
 - ✅ `POST /api/appointments` — public, rate-limited (Upstash), Turnstile doğrulaması
 - ✅ `POST /api/auth/register` — email + şifre (scrypt hash'li), `Business` kaydı oluşturur
@@ -59,7 +59,7 @@ dashboard arayüzü, şifre sıfırlama, magic link alternatifi. Bunlar auth API
 ## Faz 3 — Public booking sayfası ✅ TAMAMLANDI
 
 Spec dayanağı: satır 22 (hizmet seçimi, uygun saatlerin gösterimi, ad + telefon ile talep),
-satır 30 (müşteri randevu detay ekranı), satır 65 (Turnstile).
+satır 30 (müşteri randevu detay ekranı), satır 75 (Turnstile).
 
 Uygulama indirmeden çalışan mobil web arayüzü.
 
@@ -75,7 +75,7 @@ Uygulama indirmeden çalışan mobil web arayüzü.
 - ✅ `/[businessSlug]` — hizmet → gün → saat → ad+telefon → Turnstile → POST /api/appointments,
   201 sonrası detay sayfasına yönlendirme
 - ✅ `/[businessSlug]/appointment/[token]` — detay ekranı, altı randevu durumunun tamamı için
-  ayrı görünüm + `publicToken` ile iptal (spec satır 61)
+  ayrı görünüm + `publicToken` ile iptal (spec satır 71)
 - ✅ `src/lib/read-limit.ts` — üç yeni public GET route'u için IP bazlı limit (CLAUDE.md §2).
   Upstash istemcisi `src/lib/redis.ts`'e çıkarıldı; `rate-limit.ts` onu kullanıyor.
 
@@ -111,11 +111,11 @@ sıfırlandı. Faz 2 regresyonu (günlük 5 talep limiti, kota iadesinin negatif
 ## Faz 4 — Dashboard ✅ TAMAMLANDI
 
 Spec dayanağı: satır 14-19 (hizmet ve çalışma saati yönetimi), satır 24 (bekleyen randevular),
-satır 58 (her zaman görünür bekleyen sayısı rozeti), satır 67-68 (berber kimlik doğrulaması — UI katmanı).
+satır 68 (her zaman görünür bekleyen sayısı rozeti), satır 77-78 (berber kimlik doğrulaması — UI katmanı).
 
 - ✅ `/login`, `/register` — Faz 2 auth API'lerinin UI katmanı
 - ✅ `/dashboard` + `layout.tsx` — bugünün randevuları; **bekleyen rozeti LAYOUT'ta** durur,
-  böylece dört sekmede de görünür (spec satır 58 "her zaman görünür"). Sayaç liste yanıtının
+  böylece dört sekmede de görünür (spec satır 68 "her zaman görünür"). Sayaç liste yanıtının
   içinde (`pendingCount`) gelir; ayrı sayaç endpoint'i rozetin listeyle ayrışmasına yol açardı.
 - ✅ `/dashboard/appointments` — dört kapsam (bekleyen/yaklaşan/bugün/tümü), onayla + iptal.
   Onay `wa.me` linkini YENİ SEKMEDE açar; mesaj MANUEL gönderilir (spec satır 28-29).
@@ -153,7 +153,7 @@ onay/iptal sonrası sayfa yenilenmeden güncellendiği ve sıfırda kaybolmadı�
 > için fonksiyonel olarak geçerli sayıldı, ama gerçek cihaz testi Faz 7'ye (uçtan uca QA)
 > taşınsın.
 
-Auth tarafında hâlâ YAPILMAYANLAR (spec satır 68'de geçiyor, ayrı bir faza ait):
+Auth tarafında hâlâ YAPILMAYANLAR (spec satır 78'de geçiyor, ayrı bir faza ait):
 şifre sıfırlama, magic link alternatifi.
 
 > **v2 adayı: şifremi unuttum akışı + login brute-force koruması birlikte ele alınacak —
@@ -167,7 +167,7 @@ Auth tarafında hâlâ YAPILMAYANLAR (spec satır 68'de geçiyor, ayrı bir faza
 
 ## Faz 5 — Push bildirimleri ✅ TAMAMLANDI
 
-Spec dayanağı: satır 55-57. VAPID, Firebase yok, ücretsiz.
+Spec dayanağı: satır 65-67. VAPID, Firebase yok, ücretsiz.
 
 - ✅ `src/lib/push.ts` — VAPID gönderim katmanı. Push servisi **404/410** dönerse ilgili
   `PushSubscription` satırı SİLİNİR (ölü abonelikler yığılmaz); 429/5xx/ECONNREFUSED gibi
@@ -176,7 +176,7 @@ Spec dayanağı: satır 55-57. VAPID, Firebase yok, ücretsiz.
 - ✅ `src/lib/push-notifications.ts` — yalnızca bildirim İÇERİĞİ (tek sorumluluk):
   - `yeniRandevuTalebiBildir(...)` — "Yeni randevu talebi" / "<ad>, <saat>". Randevu BUGÜNSE
     sadece saat, başka günse gün de yazılır ("17 Ağustos 09:00"), işletmenin saat diliminde.
-  - `gunlukBekleyenOzetiGonder(businessId)` — spec satır 57'in fonksiyonu. PENDING sayar,
+  - `gunlukBekleyenOzetiGonder(businessId)` — spec satır 67'in fonksiyonu. PENDING sayar,
     "N bekleyen randevunuz var" gönderir; **N=0 ise hiç göndermez**. Faz 6'daki cron BUNU
     çağıracak; Faz 5'te hiçbir zamanlayıcı/cron kurulmadı (grep ile doğrulandı).
 - ✅ `POST /api/appointments` — 201 sonrası `after()` (next/server) ile bildirim tetiklenir.
@@ -239,7 +239,7 @@ yedeğine düşülüyor. İlk (düzeltme öncesi) tıklamada sekmenin `controlle
 
 ## Faz 6 — Cron (zaman aşımı süpürmesi) ✅ TAMAMLANDI ⚠ bağımsız QA bekliyor (session limiti nedeniyle geliştirici kendi kodunu test etti)
 
-Spec dayanağı: satır 51-54 (çalışma saati farkındalıklı zaman aşımı) ve satır 57 (günlük özet).
+Spec dayanağı: satır 61-64 (çalışma saati farkındalıklı zaman aşımı) ve satır 67 (günlük özet).
 Sabit "2 saat" kuralı YOK; kapalı saatlerde geçen süre sayılmaz.
 
 - ✅ `src/lib/expiry.ts` — SAF hesap (`slots.ts` ile aynı gerekçe: veritabanına dokunmaz).
@@ -410,7 +410,7 @@ tekrar sorulmasın — bunlar açık iş DEĞİL, KAPANMIŞ kararlardır.
   "dükkan yok" mesajına dönüşmemeli (Turnstile/Upstash fail-open politikasıyla aynı yön).
 - **(b) DOKUNULMAYACAK — kapandı.** Detay sayfasında `[businessSlug]` segmenti
   doğrulanmıyor; başka işletmenin slug'ı ile geçerli token çalışıyor. Güvenlik açığı
-  DEĞİLDİR: yetki token'ın kendisidir (spec satır 61), token tahmin edilemez ve ekranda
+  DEĞİLDİR: yetki token'ın kendisidir (spec satır 71), token tahmin edilemez ve ekranda
   randevunun GERÇEK sahibi işletmenin adı yazar. Slug burada yalnızca bir URL süsü.
 - **(c) DOKUNULMAYACAK — kapandı.** Panel sekme değişimi URL'e yansımıyor, yenilemede
   seçili sekme kayboluyor. Kozmetik; spec sekme durumunun kalıcılığını istemiyor.
@@ -636,13 +636,13 @@ yorumları, `schema.prisma`, migration SQL'i ve dokümanlar spec'e SATIR NUMARAS
 Numarası 31 ve üzeri olan tüm atıflar +19 kaydırıldı.
 
 İlk kaydırma taraması EKSİK kaldı ve bunu QA yakaladı: kullanılan kalıp yalnızca "satır" kelimesinin
-hemen ardındaki sayıyı görüyordu, `spec satır 24 + 39` / `spec satır 15-16, 49` gibi listelerdeki
+hemen ardındaki sayıyı görüyordu, `spec satır 24 + 45` / `spec satır 15-16, 59` gibi listelerdeki
 İKİNCİ ve sonraki sayıları atlıyordu. 11 atıf yanlış satırı göstermeye devam ediyordu
 (`schema.prisma` 5, `shell.tsx`, `appointment-list.tsx`, `service-picker.tsx`, `expiry-sweep.ts`,
 `register/page.tsx`, `auth/register/route.ts`). Hepsi elle düzeltildi ve hedef satırlar spec'in
 güncel halinde tek tek okunarak doğrulandı.
 
-Bilinen ve DOKUNULMAYAN kusur: `schema.prisma`'daki `spec satır 21-69 (akış)` aralığı zaten bu
+Bilinen ve DOKUNULMAYAN kusur: `schema.prisma`'daki `spec satır 21-79 (akış)` aralığı zaten bu
 değişiklikten ÖNCE de gevşekti (eski hali `21-50` idi, "Randevu akışı" bölümü ise eskiden 21-30
 arasındaydı). Mekanik kaydırma orijinal anlamı olduğu gibi taşıdı; yazarın kastını sonradan
 daraltmak bu commit'in işi değil.
@@ -668,4 +668,101 @@ senaryolar koşturuldu, sonra silindi.
 Statik doğrulanan tek madde: panel formu tarayıcıda TIKLANMADI. Butonun varlığı, saat alanının
 düz `<input type="time">` olduğu ve formun `/api/availability`'yi hiç çağırmadığı kod okumasıyla
 teyit edildi. Uçtan uca tarayıcı testi yapılmadı.
+
+## Faz 9.1 — Manuel randevuda tarih/saat seçimi müşteri akışıyla eşitlendi (2026-08-20)
+
+Faz 9'da saat SERBEST giriliyordu (`<input type="time">`). Kullanıcı geri bildirimi: berber
+"kafasına göre" saat yazarsa mevcut bir randevuyla denk gelme ihtimali var; tarih için de düzgün
+bir seçim ekranı istiyor ve geçmiş günler seçilememeli.
+
+### Karara bağlanan çelişki
+
+Saatler müsaitlik listesinden gelirse, Faz 9'da spec'e yazılan **çalışma saati bypass'ı UI'dan
+ulaşılamaz** hale geliyordu — slot üreteci kapalı gün / kapanış sonrası saat hiç üretmiyor.
+Kullanıcıya soruldu, seçim: **bypass korunsun ama varsayılan olmasın.**
+
+### Yapılanlar
+
+- Tarih: public `DatePicker` bileşeni AYNEN kullanılıyor — işletmenin bugününden itibaren
+  `REZERVASYON_UFKU_GUN` (14) günlük şerit. Geçmiş gün "seçilemez" yapılmıyor, seçenek olarak
+  hiç ÜRETİLMİYOR.
+- Saat: public `SlotPicker` + `useAvailability` hook'u AYNEN kullanılıyor. Kopya bir seçici
+  yazılmadı — iki liste zamanla ayrışsaydı berber, müşteride görünmeyen bir saati seçebilir
+  hale gelirdi. Dolu ve geçmiş saatler listede zaten yok, yani normal akışta çakışma seçilemez.
+- Bypass artık "Çalışma saati dışına randevu ekle" onay kutusunun arkasında; açılınca slot
+  ızgarasının yerini serbest saat alanı alıyor. Kutu kapalıyken müsaitlik sorgusu da atılmıyor
+  (boşuna public okuma kotası yenmesin).
+- **API DEĞİŞMEDİ.** `POST /api/appointments/manual` çalışma saatine hâlâ hiç bakmıyor ve saatin
+  slot ızgarasından mı serbest alandan mı geldiğini bilmiyor. Bu bilinçli: bypass bir SUNUCU
+  politikasıdır, UI ise onu ne zaman kullanacağına karar veren yerdir.
+- Hizmet, gün veya mod değişince seçili slot sıfırlanıyor — slot uzunluğu hizmete, liste güne
+  bağlı; seçimi taşımak sessizce yanlış saate randevu yazdırırdı.
+- Ekleme başarılı da olsa reddedilse de müsaitlik listesi tazeleniyor (409 SLOT_TAKEN sonrası
+  bayat liste dolu saati tekrar seçtirirdi).
+
+### 200 satır sınırı için yapılan iki ayırma (CLAUDE.md §2)
+
+- `use-active-services.ts` (YENİ): aktif hizmet çekme, form durumundan bağımsız bir sorumluluk.
+- `pending-badge.tsx` (YENİ): `shell.tsx` 203 satıra çıkmıştı; rozetin gösterimi ayrıldı.
+
+### Yan değişiklik
+
+`/api/auth/session` yanıtına `id` eklendi: `GET /api/availability` zorunlu parametre olarak
+`businessId` istiyor. Gizli veri değil — public booking sayfası zaten aynı id'yi görüyor.
+`timezone` gibi panel kabuğunun context'inde taşınıyor.
+
+### Spec referanslarının yeniden hesaplanması
+
+Spec'e 12 satır daha eklendi. Bu sefer kaydırma sabit bir sayı DEĞİLDİ (madde 5'in içine 6,
+sonrasına 10 satır girdi), bu yüzden `difflib` ile eski→yeni satır eşlemesi çıkarılıp her atıf
+o eşlemeyle yeniden yazıldı. Faz 9'daki iki kusur da bu turda kapandı:
+- Çoklu listelerdeki ikinci ve sonraki sayılar artık yakalanıyor.
+- Parantezle bölünen listelere (`schema.prisma` satır 25 ve 139) regex hâlâ ulaşamıyor; ikisi
+  elle düzeltildi ve tarama kalıbı bu deseni raporlayacak şekilde çalıştırıldı.
+
+Ayrıca Faz 9'dan devreden GERÇEK bir kusur bulundu: `manual/route.ts` içinde `publicToken` atfı
+bir satır kaymıştı (rastgele token yerine slot çakışması satırını gösteriyordu). Mekanik kaydırma
+hatayı sadakatle taşımıştı; düzeltildi.
+
+### QA (2026-08-20) — tarayıcıda sürüldü, 8/8 kabul kriteri PASS
+
+Bu tur form UI'ı gerçekten tıklandı (önceki turda statik kalmıştı). İzole bir QA işletmesi
+kuruldu, sürüldü, silindi.
+
+- Şerit "BUGÜN 20" ile başladı, 14 gün, geçmiş gün yok. Sunucu UTC'de hâlâ 19 Ağustos iken
+  şeridin 20'den başlaması "bugün"ün işletme saat diliminden türetildiğinin kanıtı oldu.
+- Panelde 12:00 seçilip kaydedildi → sayfa yenilenmeden ızgara 12:00'siz döndü.
+- Panel ve public sayfanın aynı hizmet+gün için ürettiği slot listeleri `diff` ile BİREBİR aynı.
+- Checkbox açılınca slot butonu sayısı 0'a düştü, serbest saat alanı geldi; kapalı gün
+  istisnasının 23:30'una kayıt yazıldı (public liste o gün boş).
+- Hizmet 30 dk → 60 dk yapılınca ve gün değişince seçim boşaldı.
+- Arka planda bir slot doldurulup panelden aynı saat gönderildi → "Bu saat az önce doldu."
+  ve ızgaradan o saat aynı anda düştü.
+- Dünkü API kriterleri (401, CONFIRMED, 409, geçmiş saat 400, pasif hizmet 404, push yok)
+  yeniden ölçüldü, hepsi geçerli. `/api/auth/session` yanıtı tam olarak
+  `{business:{id,slug,name,email,timezone}}` — `passwordHash`/`phone`/`address` yok.
+
+### QA'nın bulduğu ve düzeltilen kusurlar
+
+1. **`schema.prisma` satır 4 kaydırmadan kaçmıştı** — satır içinde "satır" kelimesi geçmediği
+   için ne regex ne difflib eşlemesi ulaşabiliyordu; dört atıf da (owner/staff, online ödeme,
+   SMS, AI) tamamen alakasız satırları gösteriyordu. Elle düzeltildi. Bu, "parantezli çoklu
+   liste" sınıfının üçüncü örneği — kalıbın kör noktası artık biliniyor.
+2. **409 sonrası bayat slot seçimi** — liste tazeleniyordu ama `degerler.slot` artık listede
+   olmayan ISO değeri tutmaya devam ediyordu; berber hiçbir şey seçmeden tekrar gönderirse
+   aynı dolu saat için ikinci kez 409 alıyordu. Public akışta bunun karşılığı
+   `booking-client.tsx`'te türetilmiş bir koruma ile kapatılmıştı, panelde eşi yoktu.
+   Aynı desen panele de eklendi (`gecerliSlot`). QA bunu kabul kriteri dışı olduğu için
+   FAIL saymamıştı; yine de düzeltildi çünkü "müşteri akışıyla eşdeğer" kararının parçası.
+3. **Spec içi iki gevşek atıf** — zaman aşımı bütçesi maddesi satır 63 yerine 63-64'ü
+   göstermeli (ifade sarmalın ikinci yarısında). Madde 5'teki "public akıştaki kontrol"
+   atfı ise satır numarası yerine "Onaylanan Çıkarımlar" bölümüne isimle atıf yapacak şekilde
+   yeniden yazıldı — yeni metinde satır numarası kullanmamak bu kırılganlığın tek gerçek çözümü.
+
+### Bilinen ve DÜZELTİLMEYEN (kullanıcı kararına bırakıldı)
+
+`src/app/api/appointments/route.ts` içindeki çalışma saati kontrolü adımı, alıntıladığı
+"sadece UI kontrolü değil" ifadesinin geçtiği satıra (73) atıf yapıyor; o satır aslında slot
+çakışmasıyla ilgili. Alıntı doğru yerde ama maddenin konusu farklı. Bu, bu commit'in getirdiği
+bir kayma DEĞİL — atıf ilk yazıldığından beri böyle. Kod davranışını etkilemiyor.
 

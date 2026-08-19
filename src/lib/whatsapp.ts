@@ -5,7 +5,7 @@ import type { AppointmentDto } from "./dto";
  * KENDİ WhatsApp'ı açılır, mesajı MANUEL gönderir.
  *
  * WhatsApp Business API YOK, resmi entegrasyon YOK, otomatik gönderim YOK
- * (spec satır 74 bunu açıkça kapsam dışı bırakıyor). Burada üretilen tek şey
+ * (spec satır 84 bunu açıkça kapsam dışı bırakıyor). Burada üretilen tek şey
  * bir URL'dir — bu modül hiçbir mesaj göndermez, dış servise çağrı yapmaz.
  *
  * Hedef `wa.me` DEĞİL, `api.whatsapp.com/send/`dir. Gerekçe ölçülmüştür: `wa.me`

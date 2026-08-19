@@ -24,7 +24,7 @@ const KILIT_TTL_SANIYE = 26 * 60 * 60;
  *
  * FAIL-OPEN (kullanıcı kararı, 2026-08-16): Upstash'e ULAŞILAMAZSA kilit kontrolü
  * ATLANIR ve özet yine de gönderilir. Gerekçe mevcut rate-limit politikasıyla
- * aynı yöndedir — bir altyapı kesintisinin spec satır 57'deki bildirimi tamamen
+ * aynı yöndedir — bir altyapı kesintisinin spec satır 67'deki bildirimi tamamen
  * susturması, nadir bir çift bildirimden daha maliyetli görüldü. Hata SESSİZCE
  * yutulmaz, loglanır (CLAUDE.md §2).
  */

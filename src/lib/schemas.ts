@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Telefon numarası normalizasyonu.
  *
- * Rate limit anahtarı (spec satır 64) telefon numarasına dayandığı için, aynı
+ * Rate limit anahtarı (spec satır 74) telefon numarasına dayandığı için, aynı
  * numaranın farklı yazımları ("0532 111 22 33", "+90 532 111 22 33") AYNI
  * anahtara düşmelidir; aksi halde limit boşluk koyarak kolayca aşılır.
  *
@@ -73,7 +73,7 @@ export const musaitlikSorgusuSemasi = z.object({
     }, "Böyle bir takvim günü yok."),
 });
 
-/** Spec satır 15-16: isim, telefon, opsiyonel adres, sektör + satır 68: email/şifre. */
+/** Spec satır 15-16: isim, telefon, opsiyonel adres, sektör + satır 78: email/şifre. */
 export const kayitSemasi = z.object({
   name: z.string().trim().min(2, "İşletme adını girin.").max(100),
   phone: telefonSemasi,
@@ -94,7 +94,7 @@ export const girisSemasi = z.object({
 });
 
 /**
- * İptal talebi — spec satır 61: müşteri, kendisine gelen linkteki `publicToken`
+ * İptal talebi — spec satır 71: müşteri, kendisine gelen linkteki `publicToken`
  * ile iptal eder. Berber ise oturumuyla iptal eder, token göndermez.
  */
 export const iptalSemasi = z.object({

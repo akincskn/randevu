@@ -15,8 +15,8 @@ export function generateMetadata(): Metadata {
 /**
  * Müşteri randevu detay ekranı — spec satır 30 ("saat, hizmet, adres").
  *
- * Adresteki `token`, spec satır 61'deki kriptografik rastgele `publicToken`'dır;
- * sıralı id DEĞİLDİR. Yetkilendirme token'ın kendisidir — hesap yoktur (satır 69).
+ * Adresteki `token`, spec satır 71'deki kriptografik rastgele `publicToken`'dır;
+ * sıralı id DEĞİLDİR. Yetkilendirme token'ın kendisidir — hesap yoktur (satır 79).
  *
  * Aynı ekran iki yoldan açılır: randevu oluşturulduktan sonraki yönlendirme ve
  * berberin WhatsApp'tan gönderdiği link. Tek kod yolu, tek görünüm.

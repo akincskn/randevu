@@ -11,7 +11,7 @@ import { SayfaLinki } from "./page-link";
 import { HataKutusu, Yukleniyor } from "./ui";
 
 /**
- * Müşteri randevu detayı — spec satır 30 (saat, hizmet, adres) + satır 61
+ * Müşteri randevu detayı — spec satır 30 (saat, hizmet, adres) + satır 71
  * (`publicToken` ile iptal).
  *
  * İptal `window.confirm` KULLANMAZ: tarayıcı modal'ı sayfayı bloklar ve mobilde

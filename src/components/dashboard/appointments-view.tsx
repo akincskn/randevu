@@ -31,7 +31,7 @@ function kapsamCoz(ham: string | null): RandevuKapsami {
  */
 export function AppointmentsView() {
   const sorgu = useSearchParams();
-  const { rozetYenile, timezone } = useKabuk();
+  const { rozetYenile, timezone, businessId } = useKabuk();
   const [kapsam, setKapsam] = useState<RandevuKapsami>(() => kapsamCoz(sorgu.get("scope")));
   const [formAcik, setFormAcik] = useState(false);
   // Manuel randevu eklendiğinde liste yeniden monte edilir; `AppointmentList`
@@ -54,6 +54,7 @@ export function AppointmentsView() {
 
       {formAcik ? (
         <ManualAppointmentForm
+          businessId={businessId}
           timezone={timezone}
           onOlusturuldu={() => {
             setListeSurumu((n) => n + 1);

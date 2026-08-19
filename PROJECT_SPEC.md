@@ -32,20 +32,30 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
    *Kapsam eklentisi — spec'in ilk sürümünde yoktu, 2026-08-19'da kullanıcı tarafından v1 kapsamına
    eklendi. Bu bir "sonradan onaylanan çıkarım" DEĞİL, yeni bir gereksinimdir.*
    - Randevular sekmesindeki "+ Yeni Randevu Ekle" butonu formu açar: hizmet, tarih, saat, ad, telefon.
+   - **Tarih ve saat seçimi MÜŞTERİ AKIŞIYLA EŞDEĞERDİR** (2026-08-20 kararı): tarih, müşterinin
+     gördüğü ile aynı gün şeridinden seçilir (işletmenin bugününden itibaren rezervasyon ufku kadar;
+     geçmiş gün seçenek olarak hiç üretilmez), saat ise `GET /api/availability`ın ürettiği slot
+     ızgarasından. Aynı hook ve aynı bileşenler kullanılır, kopya bir seçici yazılmaz — iki liste
+     ayrışırsa berber müşteride görünmeyen bir saati seçer hale gelirdi. Dolu ve geçmiş saatler
+     listede zaten yoktur, dolayısıyla normal akışta çakışan bir saat SEÇİLEMEZ.
    - Kayıt doğrudan `CONFIRMED` doğar (`PENDING` değil): berber randevuyu telefonda/yüz yüze zaten
-     onaylamıştır. Bekleyen rozetini (satır 58) etkilemez ve zaman aşımı süpürmesinin (yalnızca
+     onaylamıştır. Bekleyen rozetini (satır 68) etkilemez ve zaman aşımı süpürmesinin (yalnızca
      `PENDING` kayıtlara bakar) dışında kalır.
    - Oluşturma sonrası OPSİYONEL bir "WhatsApp'tan onay gönder" butonu belirir; madde 3'teki link
      üreticisinin aynısını kullanır (mesaj yine MANUEL gönderilir, resmi API yok).
-   - **ÇALIŞMA SAATİ VE İSTİSNA KONTROLÜ BİLİNÇLİ OLARAK BYPASS EDİLİR.** Berber kapalı günde veya
-     kapanış saatinden sonra kendi takdiriyle müşteri alabilmelidir; saat seçimi bu yüzden
-     müsaitlik üretecinin slotlarıyla da sınırlı değildir, serbesttir. Bu, public akıştaki
-     kontrolün (satır 63) unutulması DEĞİL, bu endpoint'e özel kasıtlı bir istisnadır; public
-     `POST /api/appointments` kontrolü aynen uygulamaya devam eder.
+   - **ÇALIŞMA SAATİ VE İSTİSNA KONTROLÜ BİLİNÇLİ OLARAK BYPASS EDİLİR — ama VARSAYILAN DEĞİL,
+     ayrıca açılan bir istisnadır** (2026-08-20 kararı). Berber kapalı günde veya kapanış saatinden
+     sonra kendi takdiriyle müşteri alabilmelidir; formdaki "çalışma saati dışına randevu ekle"
+     anahtarı açıldığında slot ızgarasının yerini serbest saat alanı alır. Anahtar kapalıyken
+     (varsayılan) yalnızca müsait slotlar seçilebilir. API tarafında kontrol HER İKİ DURUMDA DA
+     bypass edilir: `POST /api/appointments/manual` çalışma saatine hiç bakmaz, saatin nereden
+     geldiğini bilmez, bilmesi de gerekmez. Bu, public akıştaki çalışma saati kontrolünün (bkz.
+     "Onaylanan Çıkarımlar", sunucu tarafı tekrar kontrolü, 2026-08-15) unutulması DEĞİL, bu
+     endpoint'e özel kasıtlı bir istisnadır; public `POST /api/appointments` kontrolü sürer.
    - Bypass EDİLMEYENLER: slot çakışması yine veritabanı seviyesinde engellenir (çakışmada
      `409 SLOT_TAKEN`), geçmiş saate randevu yazılamaz, yalnızca aktif hizmet seçilebilir,
      `publicToken` yine kriptografik rastgeledir.
-   - Turnstile ve günlük telefon kotası UYGULANMAZ: istek oturumla korunuyor ve kota (satır 64)
+   - Turnstile ve günlük telefon kotası UYGULANMAZ: istek oturumla korunuyor ve kota (satır 74)
      müşteri kötüye kullanımına karşıdır, berberin kendi defterine yazma hızına değil.
 
 ### Bekleyen randevu zaman aşımı (kritik karar)
@@ -87,7 +97,7 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
 ## Onaylanan Çıkarımlar (spec'te lafzen yok, kullanıcı onayıyla eklendi)
 
 - Business.slug — public booking link için gerekli, 2026-08-14 onaylandı
-- Business.email, Business.passwordHash — spec satır 68'daki "email/şifre veya magic link"
+- Business.email, Business.passwordHash — spec satır 78'daki "email/şifre veya magic link"
   ifadesinin doğal sonucu, 2026-08-14 onaylandı
 - AppointmentStatus enum genişletmesi (EXPIRED, COMPLETED, NO_SHOW) — zaman aşımı ve
   slot-çakışma mekanizmasının önkoşulu, 2026-08-14 onaylandı
@@ -105,7 +115,7 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   müşteri detay ekranındaki iptal butonu `PATCH /api/appointments/[id]/cancel` çağırıyor ve
   o endpoint id'yi path'te bekliyor. Bu yanıtı yalnızca `publicToken`'ı bilen alır ve iptal
   aynı token'ı ayrıca doğrular; id tek başına hiçbir yetki taşımaz, `publicToken` id'den
-  türetilebilir değildir (spec satır 61 korunur). 2026-08-15 onaylandı
+  türetilebilir değildir (spec satır 71 korunur). 2026-08-15 onaylandı
 - `Service.isActive` (boolean, varsayılan true) — spec satır 17'de lafzen yok. Gerekçe:
   `Appointment.service` ilişkisi `onDelete: Restrict` olduğu için bir kez randevu almış
   hizmet SİLİNEMEZ (geçmiş randevu hangi hizmet için alındığını kaybetmemeli). Berberin
@@ -118,10 +128,10 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   kalıyor. Yalnızca brute-force koruması eklenirse kilitlenen berberin kendini kurtarma yolu
   olmaz; yalnızca şifre sıfırlama eklenirse giriş denemeleri sınırsız kalırken yeni bir
   saldırı yüzeyi açılır. 2026-08-16 onaylandı
-- **Zaman aşımı bütçesi 120 dakikadır ve AÇIK geçen dakikalar BİRİKİR** — spec satır 53'teki
+- **Zaman aşımı bütçesi 120 dakikadır ve AÇIK geçen dakikalar BİRİKİR** — spec satır 63-64'teki
   "örn. ilk 1-2 saat" bağlayıcı bir sayı vermiyordu. `createdAt`'ten itibaren yalnızca
   işletmenin açık olduğu dakikalar sayılır; kapalıyken sayaç DURUR ve ertesi açılışta
-  kaldığı yerden devam eder (satır 54'in birebir karşılığı). Böylece her talebe eşit
+  kaldığı yerden devam eder (satır 64'in birebir karşılığı). Böylece her talebe eşit
   120 dakika tanınır: gece 02:00'de gelen talep 09:00 açılışlı bir dükkanda 11:00'de,
   17:30'da gelen talep ertesi gün açılıştan 90 dakika sonra düşer. 2026-08-16 onaylandı
 - **Randevu SAATİ (`startsAt`) geçtiğinde randevu, 120 dakikası dolmasa bile EXPIRED olur** —
@@ -136,7 +146,7 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   günde yalnızca 1 tetikleme verdiği için elendi: "açılıştan 1-2 saat sonra" kuralı ve
   her işletmeyi kendi açılış saatinde yakalaması gereken günlük özet günde tek çağrıyla
   taşınamaz. Upstash hesabı projede zaten kurulu. 2026-08-16 onaylandı
-- **Günlük özet (satır 57) sık cron + açılış penceresi + Redis NX kilidi ile zamanlanır** —
+- **Günlük özet (satır 67) sık cron + açılış penceresi + Redis NX kilidi ile zamanlanır** —
   her turda işletmenin YEREL saati o günkü açılışın ilk 30 dakikasına düşüyorsa özet
   gönderilir; `digest:<businessId>:<yerelGün>` anahtarı (SET NX, 26 saat TTL) aynı gün
   ikinci gönderimi engeller. **Redis'e ULAŞILAMAZSA kilit kontrolü atlanır ve özet yine de
@@ -161,7 +171,7 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   `robots: { index: false }` ile arama motorlarına kapatılır. 2026-08-17 onaylandı
 - **Onay linki `wa.me` yerine `api.whatsapp.com/send/` üretir** — spec satır 27 lafzen
   "`wa.me` linki" diyor, hedef adres değişti, davranış aynı kaldı (berber tıklar, kendi
-  WhatsApp'ı hazır metinle açılır, MANUEL gönderir; satır 74 hâlâ geçerli, resmi API yok).
+  WhatsApp'ı hazır metinle açılır, MANUEL gönderir; satır 84 hâlâ geçerli, resmi API yok).
   Gerekçe ölçümdür, tercih değil: `wa.me` isteği 302 ile `api.whatsapp.com`'a yönlendirirken
   `text` parametresindeki BMP dışı karakterleri bozuyor —
   `?text=%F0%9F%93%85` gönderildiğinde `Location: ...&text=%EF%BF%BD` dönüyor, yani

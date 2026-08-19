@@ -83,7 +83,7 @@ export function dashboardYaz<T>(url: string, method: string, govde?: unknown): P
 }
 
 export interface OturumBilgisi {
-  business: { slug: string; name: string; email: string; timezone: string };
+  business: { id: string; slug: string; name: string; email: string; timezone: string };
 }
 
 export const oturumGetir = (): Promise<OturumBilgisi> =>
@@ -127,7 +127,7 @@ export const manuelRandevuOlustur = (girdi: ManuelRandevuGirdisi): Promise<OnayY
 export const randevuIptalEt = (id: string): Promise<AppointmentDto> =>
   dashboardYaz<AppointmentDto>(`/api/appointments/${encodeURIComponent(id)}/cancel`, "PATCH", {});
 
-/** Tarayıcının ürettiği push aboneliğini sunucuya kaydeder (spec satır 55-57). */
+/** Tarayıcının ürettiği push aboneliğini sunucuya kaydeder (spec satır 65-67). */
 export interface PushAbonelikGirdisi {
   endpoint: string;
   keys: { p256dh: string; auth: string };

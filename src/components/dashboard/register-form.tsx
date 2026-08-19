@@ -10,7 +10,7 @@ import { Alan, ALAN_SINIFI, AnaButon, Hata } from "./form-ui";
 
 /**
  * Berber kayıt formu — spec satır 15-16 (isim, telefon, opsiyonel adres, sektör)
- * + satır 68 (email/şifre).
+ * + satır 78 (email/şifre).
  *
  * `slug` GÖNDERİLMEZ: public link tanımlayıcısını sunucu işletme adından üretir
  * ve çakışmayı kendisi çözer (bkz. `api/auth/register/route.ts`).

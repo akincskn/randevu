@@ -7,7 +7,7 @@ import { girisSemasi } from "@/lib/schemas";
 import { sessionCookieHeader, sessionTokenUret } from "@/lib/session";
 
 /**
- * POST /api/auth/login — berber girişi (spec satır 68).
+ * POST /api/auth/login — berber girişi (spec satır 78).
  *
  * Faz 2 kapsamı API-only; giriş SAYFASI Faz 4'te (bkz. ROADMAP.md).
  */

@@ -5,7 +5,7 @@ import { isoGunEkle, isoGunHaftaninGunu } from "./slots";
 import { mutlakAnHesapla, yerelAnHesapla } from "./timezone";
 
 /**
- * ÇALIŞMA SAATİ FARKINDALIKLI ZAMAN AŞIMI — spec satır 51-54.
+ * ÇALIŞMA SAATİ FARKINDALIKLI ZAMAN AŞIMI — spec satır 61-64.
  *
  * Spec sabit bir duvar saati kuralını (ör. "2 saat sonra iptal") AÇIKÇA reddediyor:
  * gece verilen randevuyu haksız cezalandırırdı. Bunun yerine bir PENDING randevu,
@@ -25,7 +25,7 @@ export const ZAMAN_ASIMI_DAKIKA = 120;
  *
  * Sonsuz döngü koruması. Sınıra ULAŞILIRSA bütçe dolmamış sayılır (fail-safe):
  * her günü kapalı bir işletmede sayaç gerçekten hiç ilerlemez ve o randevuyu
- * "süresi doldu" saymak spec satır 54'i ihlal ederdi. Böyle kayıtlar pratikte
+ * "süresi doldu" saymak spec satır 64'i ihlal ederdi. Böyle kayıtlar pratikte
  * `startsAt` koşuluyla düşer (bkz. `randevuSuresiDolduMu`).
  */
 const MAX_GUN = 400;
@@ -140,7 +140,7 @@ export interface ZamanAsimiAdayi {
  * İKİ koşuldan hangisi ÖNCE gerçekleşirse o uygulanır (kullanıcı kararı, 2026-08-16):
  *   1. Randevu SAATİ geçti — geçmiş bir saati onaylamak anlamsızdır ve o slot
  *      `Appointment_no_overlap_excl` gereği boşuna dolu tutulur.
- *   2. İşletmenin açık olduğu `ZAMAN_ASIMI_DAKIKA` dakika birikti (spec satır 53-54).
+ *   2. İşletmenin açık olduğu `ZAMAN_ASIMI_DAKIKA` dakika birikti (spec satır 63-64).
  */
 export function randevuSuresiDolduMu(
   takvim: CalismaTakvimi,

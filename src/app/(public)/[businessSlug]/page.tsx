@@ -12,7 +12,7 @@ import type { BusinessPublicDto } from "@/lib/dto";
  * uygulama indirmeden, mobil web").
  *
  * Sunucu bileşeni veriyi Prisma'dan DEĞİL `api/` + DTO katmanından okur
- * (STRUCTURE.md satır 78-79 page bileşenlerinin Prisma'ya erişmesini yasaklıyor).
+ * (STRUCTURE.md satır 88-89 page bileşenlerinin Prisma'ya erişmesini yasaklıyor).
  * Okuduğu tek şey işletmenin VAR OLUP OLMADIĞI: yoksa `notFound()` çağrılır,
  * böylece olmayan bir slug 200 değil 404 döner (Faz 7 QA gözlemi (a)).
  * Randevu akışının verisi hâlâ istemcide çekilir — `BookingClient` değişmedi.

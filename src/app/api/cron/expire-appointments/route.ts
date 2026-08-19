@@ -5,8 +5,8 @@ import { cronYetkisiDogrula } from "@/lib/cron-auth";
 import { zamanAsimiSupurmesiCalistir } from "@/lib/expiry-sweep";
 
 /**
- * POST /api/cron/expire-appointments — zaman aşımı süpürmesi (spec satır 51-54)
- * ve günlük bekleyen özeti (spec satır 57).
+ * POST /api/cron/expire-appointments — zaman aşımı süpürmesi (spec satır 61-64)
+ * ve günlük bekleyen özeti (spec satır 67).
  *
  * Upstash QStash tarafından 15 dakikada bir çağrılır (kullanıcı kararı, 2026-08-16;
  * Vercel Cron ücretsiz planda günde 1 tetikleme verdiği için elenmişti). Koruma

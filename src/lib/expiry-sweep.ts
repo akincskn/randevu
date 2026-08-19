@@ -8,7 +8,7 @@ import { withTimeout } from "./timeout";
 import { yerelAnHesapla } from "./timezone";
 
 /**
- * ZAMAN AŞIMI SÜPÜRMESİ — spec satır 51-54 ve 57'nin yürütücüsü.
+ * ZAMAN AŞIMI SÜPÜRMESİ — spec satır 61-64 ve 67'nin yürütücüsü.
  *
  * `expiry.ts` "bu randevunun süresi doldu mu?" sorusunu SAF olarak cevaplar;
  * bu modül veritabanını okur, kararı uygular ve günlük özeti tetikler. Route
@@ -85,7 +85,7 @@ function takvimKur(isletme: {
 /**
  * Günlük özet penceresinde miyiz?
  *
- * Spec satır 57: "dükkan açılışına yakın bir saatte". Karşılaştırma MUTLAK
+ * Spec satır 67: "dükkan açılışına yakın bir saatte". Karşılaştırma MUTLAK
  * zamanda yapılır (duvar saati dakikası yerine) — yaz saati geçişinde duvar
  * saati aritmetiği yanıltıcı olurdu.
  */

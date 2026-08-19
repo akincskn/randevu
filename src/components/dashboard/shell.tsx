@@ -14,6 +14,7 @@ import {
 
 import { KabukSaglayici } from "./shell-context";
 import { Hata, Yukleniyor } from "./form-ui";
+import { PendingBadge } from "./pending-badge";
 import { PushAcmaButonu } from "./push-toggle";
 
 const SEKMELER = [
@@ -26,7 +27,7 @@ const SEKMELER = [
 /**
  * Panel kabuğu — oturum koruması + kalıcı bekleyen randevu rozeti.
  *
- * Rozet burada, LAYOUT seviyesinde durur: spec satır 58 "panelde bekleyen randevu
+ * Rozet burada, LAYOUT seviyesinde durur: spec satır 68 "panelde bekleyen randevu
  * sayısı HER ZAMAN görünür bir rozet ile gösterilir" diyor. Sayfaya konsaydı
  * hizmet/saat sekmelerinde kaybolurdu.
  */
@@ -35,7 +36,7 @@ export function DashboardShell({
   vapidPublicKey,
 }: {
   children: ReactNode;
-  /** VAPID public anahtarı; boşsa push arayüzü hiç gösterilmez (spec satır 55-57). */
+  /** VAPID public anahtarı; boşsa push arayüzü hiç gösterilmez (spec satır 65-67). */
   vapidPublicKey: string;
 }) {
   const router = useRouter();
@@ -114,7 +115,12 @@ export function DashboardShell({
 
   return (
     <KabukSaglayici
-      value={{ bekleyenSayisi, rozetYenile, timezone: oturum.business.timezone }}
+      value={{
+        bekleyenSayisi,
+        rozetYenile,
+        timezone: oturum.business.timezone,
+        businessId: oturum.business.id,
+      }}
     >
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <header className="mb-4 flex items-start justify-between gap-3">
@@ -136,35 +142,9 @@ export function DashboardShell({
           </button>
         </header>
 
-        {/* Spec satır 24 + 58: bekleyen randevu rozeti BELİRGİN ve gözden kaçmaz.
-            Sıfırken de gösterilir ama sakin renkte — "her zaman görünür" şartı,
-            yalnızca bekleyen varken göstermeyi dışlıyor. */}
-        <Link
-          href="/dashboard/appointments?scope=pending"
-          className={`mb-5 flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 ${
-            bekleyenSayisi > 0
-              ? "border-amber-400 bg-amber-50 text-amber-900 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-100"
-              : "border-neutral-200 bg-neutral-50 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400"
-          }`}
-        >
-          <span className="font-semibold">
-            {bekleyenSayisi > 0
-              ? `${bekleyenSayisi} randevu onayınızı bekliyor`
-              : "Bekleyen randevu yok"}
-          </span>
-          <span
-            aria-label={`${bekleyenSayisi} bekleyen randevu`}
-            className={`flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-lg font-bold tabular-nums ${
-              bekleyenSayisi > 0
-                ? "bg-amber-500 text-white"
-                : "bg-neutral-300 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-200"
-            }`}
-          >
-            {bekleyenSayisi}
-          </span>
-        </Link>
+        <PendingBadge bekleyenSayisi={bekleyenSayisi} />
 
-        {/* Spec satır 55-56: yeni randevu talebinde anında push. İzin ancak
+        {/* Spec satır 65-66: yeni randevu talebinde anında push. İzin ancak
             kullanıcı hareketiyle istenebilir, bu yüzden ayrı bir buton gerekir. */}
         {vapidPublicKey ? <PushAcmaButonu vapidPublicKey={vapidPublicKey} /> : null}
 

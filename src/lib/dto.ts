@@ -58,7 +58,7 @@ export function toAppointmentDto(kayit: AppointmentIliskili): AppointmentDto {
  * `id` yalnızca BURADA verilir: iptal butonu `PATCH /api/appointments/[id]/cancel`
  * çağırır ve o endpoint id'yi path'te bekler. Sızma riski yok, çünkü bu yanıtı
  * ancak `publicToken`'ı bilen alır — ve iptal zaten aynı token'ı doğruluyor
- * (spec satır 61). `id`'yi bilmek tek başına hiçbir yetki vermez.
+ * (spec satır 71). `id`'yi bilmek tek başına hiçbir yetki vermez.
  */
 export interface AppointmentDetailDto extends AppointmentDto {
   id: string;

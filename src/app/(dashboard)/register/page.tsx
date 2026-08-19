@@ -3,7 +3,7 @@ import { RegisterForm } from "@/components/dashboard/register-form";
 
 export const metadata: Metadata = { title: "Kayıt ol" };
 
-/** Berber kayıt sayfası — spec satır 15-16 + 68'in UI katmanı. */
+/** Berber kayıt sayfası — spec satır 15-16 + 78'in UI katmanı. */
 export default function RegisterPage() {
   return (
     <main className="mx-auto w-full max-w-sm px-4 py-12">

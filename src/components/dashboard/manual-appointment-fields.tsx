@@ -1,34 +1,48 @@
 "use client";
 
+import { DatePicker } from "@/components/public/date-picker";
+import { SlotPicker } from "@/components/public/slot-picker";
 import type { ServiceAdminDto } from "@/lib/dto-dashboard";
+import type { MusaitlikDurumu } from "@/components/public/use-availability";
 
 import { Alan, ALAN_SINIFI } from "./form-ui";
 
 /**
- * Manuel randevu formunun alanları — saf sunum katmanı.
+ * Manuel randevu formunun alanları — saf sunum katmanı (istek/durum mantığı yok).
  *
- * `manual-appointment-form.tsx`'ten AYRILDI: birleşik dosya 219 satıra çıkıyordu
- * ve CLAUDE.md §2 hand-authored src/ dosyaları için 200 satır sınırı koyuyor.
- * Ayrım keyfi değil sorumluluk bazlı: burada hiç istek/durum mantığı yoktur.
+ * Tarih ve saat seçicileri `components/public/`ten AYNEN ödünç alınır, kopyalanmaz:
+ * kullanıcı kararı 2026-08-20 "müşterinin seçeceği gibi saatler çıksın, onunla
+ * EŞDEĞER çalışmalı" diyor. Ayrı bir seçici yazılsaydı iki liste zamanla ayrışır
+ * ve berber, müşteride görünmeyen bir saati seçebilir hale gelirdi. Panelin
+ * `form-ui.tsx`'i public `ui.tsx`'ten ayrıdır ama BUNLAR seçici değil, aynı
+ * müsaitlik verisinin görünümüdür.
  */
 
 export interface ManuelRandevuAlanlari {
   serviceId: string;
   gun: string;
-  saat: string;
+  /** Slot modunda seçili mutlak an (ISO). Saat dışı modunda kullanılmaz. */
+  slot: string | null;
+  /** Saat dışı modunda serbest girilen yerel duvar saati ("HH:MM"). */
+  serbestSaat: string;
+  saatDisiMod: boolean;
   ad: string;
   telefon: string;
 }
 
 export function ManualAppointmentFields({
   hizmetler,
-  enErkenGun,
+  gunler,
+  timezone,
+  musaitlik,
   degerler,
   degistir,
 }: {
   hizmetler: ServiceAdminDto[];
-  /** `<input type="date">` alt sınırı — işletmenin yerel bugünü. */
-  enErkenGun: string;
+  /** İşletmenin bugününden itibaren rezervasyon ufku kadar gün. */
+  gunler: string[];
+  timezone: string;
+  musaitlik: MusaitlikDurumu;
   degerler: ManuelRandevuAlanlari;
   degistir: <A extends keyof ManuelRandevuAlanlari>(
     alan: A,
@@ -52,34 +66,59 @@ export function ManualAppointmentFields({
         </select>
       </Alan>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Alan id="manuel-gun" etiket="Tarih">
-          <input
-            id="manuel-gun"
-            type="date"
-            required
-            min={enErkenGun}
-            value={degerler.gun}
-            onChange={(olay) => degistir("gun", olay.target.value)}
-            className={ALAN_SINIFI}
+      <div className="space-y-1">
+        <p className="text-sm font-medium">Tarih</p>
+        {/* Geçmiş gün SEÇENEK OLARAK HİÇ ÜRETİLMEZ — şerit işletmenin bugününden
+            başlar, yani "seçilemez" yapmaya gerek kalmadan zaten yoktur. */}
+        <DatePicker
+          gunler={gunler}
+          seciliGun={degerler.gun}
+          onSec={(isoGun) => degistir("gun", isoGun)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Saat</p>
+
+        {degerler.saatDisiMod ? (
+          <Alan
+            id="manuel-serbest-saat"
+            etiket="Çalışma saati dışı saat"
+            ipucu="Bu saat müsaitlik listesinde yok; çakışma olursa kayıt reddedilir."
+          >
+            <input
+              id="manuel-serbest-saat"
+              type="time"
+              required
+              value={degerler.serbestSaat}
+              onChange={(olay) => degistir("serbestSaat", olay.target.value)}
+              className={ALAN_SINIFI}
+            />
+          </Alan>
+        ) : (
+          // Müşterinin gördüğü listenin AYNISI: dolu saatler ve geçmiş saatler
+          // burada da elenmiş gelir, dolayısıyla çakışma seçilemez.
+          <SlotPicker
+            slotlar={musaitlik.slotlar}
+            timezone={timezone}
+            seciliSlot={degerler.slot}
+            yukleniyor={musaitlik.yukleniyor}
+            hata={musaitlik.hata}
+            onSec={(isoAn) => degistir("slot", isoAn)}
           />
-        </Alan>
-        {/* Saat SERBEST: availability slotlarıyla sınırlı değil — çalışma saati
-            bypass'ı (spec "Randevu akışı" madde 5) ancak böyle kullanılabilir. */}
-        <Alan
-          id="manuel-saat"
-          etiket="Saat"
-          ipucu="Çalışma saatleriniz dışında da seçebilirsiniz."
-        >
+        )}
+
+        {/* Spec madde 5'teki çalışma saati bypass'ı buradan erişilir: VARSAYILAN
+            DEĞİL, bilinçli bir istisnadır (kullanıcı kararı, 2026-08-20). */}
+        <label className="flex items-center gap-2 text-sm">
           <input
-            id="manuel-saat"
-            type="time"
-            required
-            value={degerler.saat}
-            onChange={(olay) => degistir("saat", olay.target.value)}
-            className={ALAN_SINIFI}
+            type="checkbox"
+            checked={degerler.saatDisiMod}
+            onChange={(olay) => degistir("saatDisiMod", olay.target.checked)}
+            className="h-4 w-4"
           />
-        </Alan>
+          Çalışma saati dışına randevu ekle
+        </label>
       </div>
 
       <Alan id="manuel-ad" etiket="Müşteri adı">

@@ -21,7 +21,7 @@ export interface DurumGorunumu {
   /**
    * Sayfa adresi kutusunun üstündeki cümle (bkz. `page-link.tsx`). Adres altı
    * durumda da gösterilir — müşterinin hesabı yoktur, bu link randevuya geri
-   * dönmesinin tek yoludur (spec satır 69). Ancak "kontrol edebilirsiniz" ifadesi
+   * dönmesinin tek yoludur (spec satır 79). Ancak "kontrol edebilirsiniz" ifadesi
    * düşmüş bir randevu için yanıltıcı olacağından metin duruma göre ayrılır.
    */
   linkAciklamasi: string;

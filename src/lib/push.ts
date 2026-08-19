@@ -8,7 +8,7 @@ import { pushEnv } from "./env";
 import { prisma } from "./prisma";
 
 /**
- * Web Push gönderim katmanı — spec satır 36-38 (VAPID, ücretsiz, Firebase YOK).
+ * Web Push gönderim katmanı — spec satır 55-57 (VAPID, ücretsiz, Firebase YOK).
  *
  * Bu dosya SADECE TAŞIMA işini yapar: bir işletmenin kayıtlı aboneliklerine
  * verilen içeriği gönderir ve ölü abonelikleri temizler. Bildirimlerin METNİ

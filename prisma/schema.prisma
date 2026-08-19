@@ -1,6 +1,6 @@
 // Randevu — Berber/Kuaför Randevu Sistemi
-// Bu şema YALNIZCA PROJECT_SPEC.md "v1 Kapsamı" (satır 12-50) bölümünü modeller.
-// "v1 Kapsam DIŞI" (satır 52-59) ve "v2 / Ertelenen kararlar" (satır 61-66) hiçbir şekilde
+// Bu şema YALNIZCA PROJECT_SPEC.md "v1 Kapsamı" (satır 12-69) bölümünü modeller.
+// "v1 Kapsam DIŞI" (satır 71-78) ve "v2 / Ertelenen kararlar" (satır 80-85) hiçbir şekilde
 // modellenmez: owner/staff hiyerarşisi (63-64), online ödeme (56-57), SMS (58), AI (54) YOK.
 
 generator client {
@@ -22,7 +22,7 @@ enum Sector {
   KUAFOR
 }
 
-// Spec satır 23 (PENDING), 26 (CONFIRMED), 35 + 42 (iptal -> CANCELLED).
+// Spec satır 23 (PENDING), 26 (CONFIRMED), 54 + 61 (iptal -> CANCELLED).
 // Slot'u TUTAN (aktif) ve BIRAKAN durumlar ayrımı kritiktir — Appointment üzerindeki
 // EXCLUDE kısıtının WHERE predicate'i bu ayrıma dayanır (bkz. migration.sql).
 enum AppointmentStatus {
@@ -34,13 +34,13 @@ enum AppointmentStatus {
 
   // --- Slot'u BIRAKIR (saat tekrar satılabilir) ---
   CANCELLED // müşteri veya berber tarafından iptal
-  EXPIRED // spec satır 32-35: çalışma saatine göre hesaplanan zaman aşımı.
+  EXPIRED // spec satır 51-54: çalışma saatine göre hesaplanan zaman aşımı.
   // CANCELLED'dan AYRI tutulur: "berber onaylamadı" ile "taraflardan biri
   // iptal etti" farklı olaylardır; zaman aşımı ölçümü ancak böyle raporlanabilir.
 }
 
-/// İşletme — spec satır 14-16 (kayıt bilgileri) + satır 49 (berber kimlik doğrulaması).
-/// Spec satır 10: her berber kendi bağımsız işletmesi; owner/staff hiyerarşisi YOK (v2, satır 63-64).
+/// İşletme — spec satır 14-16 (kayıt bilgileri) + satır 68 (berber kimlik doğrulaması).
+/// Spec satır 10: her berber kendi bağımsız işletmesi; owner/staff hiyerarşisi YOK (v2, satır 82-83).
 model Business {
   id String @id @default(cuid())
 
@@ -53,7 +53,7 @@ model Business {
   address String? // spec satır 15: opsiyonel adres
   sector  Sector // spec satır 15-16
 
-  // Spec satır 49: "basit email/şifre veya magic link. SMS OTP YOK."
+  // Spec satır 68: "basit email/şifre veya magic link. SMS OTP YOK."
   // passwordHash nullable: magic link ile giren hesapta şifre olmayabilir.
   email        String  @unique
   passwordHash String?
@@ -104,7 +104,7 @@ model Service {
 /// BU DEĞERLER YEREL DUVAR SAATİDİR (kasten): "dükkan 09:00'da açar" ifadesi yaz/kış saati
 /// veya tz kuralı değişse bile 09:00 kalmalıdır. Mutlak (TIMESTAMPTZ) zamana çevrim
 /// `Business.timezone` (IANA) kullanılarak uygulama katmanında yapılır — slot üretimi ve
-/// spec satır 32-35'teki çalışma-saati-farkındalıklı zaman aşımı hesabı bu çevrime dayanır.
+/// spec satır 51-54'teki çalışma-saati-farkındalıklı zaman aşımı hesabı bu çevrime dayanır.
 /// isOpen=false ise opensAtMinute/closesAtMinute null'dır.
 model WorkingHours {
   id         String   @id @default(cuid())
@@ -136,9 +136,9 @@ model WorkingHoursException {
   @@unique([businessId, date])
 }
 
-/// Randevu — spec satır 21-31 (akış), 42 (rastgele token), 43-44 (slot çakışma koruması), 50 (müşteri hesabı yok).
+/// Randevu — spec satır 21-69 (akış), 61 (rastgele token), 62-63 (slot çakışma koruması), 69 (müşteri hesabı yok).
 ///
-/// KRİTİK — SLOT ÇAKIŞMA KORUMASI (spec satır 43-44):
+/// KRİTİK — SLOT ÇAKIŞMA KORUMASI (spec satır 62-63):
 /// Spec, iki müşterinin aynı saati almasının VERİTABANI seviyesinde engellenmesini istiyor.
 ///
 /// Naif çözüm `@@unique([businessId, startsAt])` olurdu; İKİ AYRI nedenle YETERSİZ:
@@ -172,7 +172,7 @@ model WorkingHoursException {
 model Appointment {
   id String @id @default(cuid())
 
-  // Spec satır 42: detay/iptal linkleri sıralı ID değil, kriptografik rastgele token kullanır.
+  // Spec satır 61: detay/iptal linkleri sıralı ID değil, kriptografik rastgele token kullanır.
   // Değer uygulama tarafında crypto.randomBytes ile üretilir; DB varsayılanı yoktur.
   publicToken String @unique
 
@@ -183,7 +183,7 @@ model Appointment {
   serviceId String
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Restrict)
 
-  // Spec satır 23 + 50: müşteri hesabı yok; ad ve telefon randevunun ÜSTÜNDE tutulur.
+  // Spec satır 23 + 69: müşteri hesabı yok; ad ve telefon randevunun ÜSTÜNDE tutulur.
   customerName  String
   customerPhone String
 
@@ -191,17 +191,17 @@ model Appointment {
   startsAt DateTime @db.Timestamptz(3) // spec satır 22: seçilen uygun saat
   endsAt   DateTime @db.Timestamptz(3) // hizmet süresinden (Service.durationMinutes) hesaplanır
 
-  status AppointmentStatus @default(PENDING) // spec satır 23, 26, 35
+  status AppointmentStatus @default(PENDING) // spec satır 23, 26, 54
 
-  createdAt DateTime @default(now()) @db.Timestamptz(3) // spec satır 32-35: zaman aşımı hesabının başlangıcı
+  createdAt DateTime @default(now()) @db.Timestamptz(3) // spec satır 51-54: zaman aşımı hesabının başlangıcı
   updatedAt DateTime @updatedAt @db.Timestamptz(3)
 
-  // Panel listeleri (spec satır 24, 39) ve zaman aşımı taraması (satır 32-35) için.
+  // Panel listeleri (spec satır 24, 58) ve zaman aşımı taraması (satır 51-54) için.
   @@index([businessId, status])
   @@index([businessId, startsAt])
 }
 
-/// Web Push aboneliği — spec satır 36-38: VAPID, ücretsiz, Firebase YOK.
+/// Web Push aboneliği — spec satır 55-57: VAPID, ücretsiz, Firebase YOK.
 /// Yeni randevu talebinde anında bildirim + günlük özet bildirimi berbere gönderilir.
 model PushSubscription {
   id         String   @id @default(cuid())
@@ -217,5 +217,5 @@ model PushSubscription {
   @@index([businessId])
 }
 
-// NOT: Rate limiting (spec satır 45, Upstash Redis) ve bot doğrulaması (satır 46, Turnstile)
+// NOT: Rate limiting (spec satır 64, Upstash Redis) ve bot doğrulaması (satır 65, Turnstile)
 // veritabanı modeli GEREKTİRMEZ — bu yüzden bilinçli olarak model yazılmadı.

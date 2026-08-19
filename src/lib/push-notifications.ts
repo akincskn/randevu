@@ -3,7 +3,7 @@ import { isletmeyePushGonder, type PushSonucu } from "./push";
 import { yerelAnHesapla } from "./timezone";
 
 /**
- * Bildirim METİNLERİ — spec satır 36-38:
+ * Bildirim METİNLERİ — spec satır 55-57:
  *   - Yeni randevu talebi geldiğinde ANINDA (POST /api/appointments çağırır)
  *   - Günlük özet: "N bekleyen randevunuz var" (dükkan açılışına yakın)
  *
@@ -48,7 +48,7 @@ export interface YeniRandevuBildirimi {
 }
 
 /**
- * "Yeni randevu talebi" bildirimi (spec satır 37 — "anında").
+ * "Yeni randevu talebi" bildirimi (spec satır 56 — "anında").
  *
  * Çağıran ana akışı bloklamamalıdır; bu fonksiyon `isletmeyePushGonder` gibi
  * ASLA FIRLATMAZ.
@@ -65,7 +65,7 @@ export function yeniRandevuTalebiBildir(girdi: YeniRandevuBildirimi): Promise<Pu
 }
 
 /**
- * Günlük özet: "N bekleyen randevunuz var" (spec satır 38).
+ * Günlük özet: "N bekleyen randevunuz var" (spec satır 57).
  *
  * ROADMAP.md ve kullanıcı yazışmasında `sendDailyPendingDigest(businessId)`
  * olarak anılan fonksiyon budur; ad, dosyadaki diğer yardımcılarla tutarlı

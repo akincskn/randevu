@@ -6,7 +6,7 @@ import { ApiError } from "./api-error";
 import { serverEnv } from "./env";
 
 /**
- * Berber oturumu — spec satır 48-49 ("basit email/şifre", SMS OTP YOK).
+ * Berber oturumu — spec satır 67-68 ("basit email/şifre", SMS OTP YOK).
  *
  * Durumsuz (stateless) imzalı cookie: `<businessId>.<sonKullanma>.<hmac>`.
  * Veritabanında Session tablosu YOK — eklemek yeni bir migration gerektirirdi ve

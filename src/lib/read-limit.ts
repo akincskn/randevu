@@ -8,7 +8,7 @@ import { withTimeout } from "./timeout";
  * Public OKUMA route'ları için IP bazlı limit — CLAUDE.md §2:
  * "rate-limited via Upstash where the route is public (unauthenticated)".
  *
- * Spec satır 45'teki telefon bazlı GÜNLÜK kotadan (bkz. `rate-limit.ts`) AYRIDIR
+ * Spec satır 64'teki telefon bazlı GÜNLÜK kotadan (bkz. `rate-limit.ts`) AYRIDIR
  * ve onun yerine geçmez: o, bir numaranın kaç randevu TALEP edebileceğini sınırlar;
  * bu ise işletme/müsaitlik listelerinin kazınmasını (scraping) yavaşlatır. Okuma
  * yan etkisiz olduğu için pencere kısa ve limit yüksek tutulur — gerçek bir müşteri

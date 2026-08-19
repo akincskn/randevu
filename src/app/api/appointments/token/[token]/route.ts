@@ -8,9 +8,9 @@ import { okumaKotasiTuket } from "@/lib/read-limit";
 /**
  * GET /api/appointments/token/[token] — müşteri randevu detayı (spec satır 30).
  *
- * Yetkilendirme TOKEN'IN KENDİSİDİR: spec satır 42 gereği `publicToken`
+ * Yetkilendirme TOKEN'IN KENDİSİDİR: spec satır 61 gereği `publicToken`
  * kriptografik olarak rastgeledir (bkz. `tokens.ts`), sıralı id değildir —
- * tahmin edilemez. Hesap yoktur (spec satır 50), oturum aranmaz.
+ * tahmin edilemez. Hesap yoktur (spec satır 69), oturum aranmaz.
  *
  * Bulunamayan token 404 döner; "geçersiz" ile "başkasının randevusu" ayrımı
  * BİLEREK yapılmaz — ayrım, var olan token'ları numaralandırmayı kolaylaştırırdı.

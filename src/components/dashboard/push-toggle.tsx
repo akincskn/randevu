@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DashboardApiError, pushAbonelikKaydet } from "@/lib/dashboard-api";
 
 /**
- * "Bildirimleri Aç" — spec satır 36-38 (Web Push, VAPID, Firebase YOK).
+ * "Bildirimleri Aç" — spec satır 55-57 (Web Push, VAPID, Firebase YOK).
  *
  * Panel kabuğunda durur, yani DÖRT SEKMEDE DE görünür (kullanıcı kararı,
  * 2026-08-16). Abonelik zaten varsa buton yerine "Bildirimler açık" yazar.

@@ -26,7 +26,7 @@ const SEKMELER = [
 /**
  * Panel kabuğu — oturum koruması + kalıcı bekleyen randevu rozeti.
  *
- * Rozet burada, LAYOUT seviyesinde durur: spec satır 39 "panelde bekleyen randevu
+ * Rozet burada, LAYOUT seviyesinde durur: spec satır 58 "panelde bekleyen randevu
  * sayısı HER ZAMAN görünür bir rozet ile gösterilir" diyor. Sayfaya konsaydı
  * hizmet/saat sekmelerinde kaybolurdu.
  */
@@ -35,7 +35,7 @@ export function DashboardShell({
   vapidPublicKey,
 }: {
   children: ReactNode;
-  /** VAPID public anahtarı; boşsa push arayüzü hiç gösterilmez (spec satır 36-38). */
+  /** VAPID public anahtarı; boşsa push arayüzü hiç gösterilmez (spec satır 55-57). */
   vapidPublicKey: string;
 }) {
   const router = useRouter();
@@ -113,7 +113,9 @@ export function DashboardShell({
   }
 
   return (
-    <KabukSaglayici value={{ bekleyenSayisi, rozetYenile }}>
+    <KabukSaglayici
+      value={{ bekleyenSayisi, rozetYenile, timezone: oturum.business.timezone }}
+    >
       <div className="mx-auto w-full max-w-3xl px-4 py-6">
         <header className="mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -134,7 +136,7 @@ export function DashboardShell({
           </button>
         </header>
 
-        {/* Spec satır 24 + 39: bekleyen randevu rozeti BELİRGİN ve gözden kaçmaz.
+        {/* Spec satır 24 + 58: bekleyen randevu rozeti BELİRGİN ve gözden kaçmaz.
             Sıfırken de gösterilir ama sakin renkte — "her zaman görünür" şartı,
             yalnızca bekleyen varken göstermeyi dışlıyor. */}
         <Link
@@ -162,7 +164,7 @@ export function DashboardShell({
           </span>
         </Link>
 
-        {/* Spec satır 36-37: yeni randevu talebinde anında push. İzin ancak
+        {/* Spec satır 55-56: yeni randevu talebinde anında push. İzin ancak
             kullanıcı hareketiyle istenebilir, bu yüzden ayrı bir buton gerekir. */}
         {vapidPublicKey ? <PushAcmaButonu vapidPublicKey={vapidPublicKey} /> : null}
 

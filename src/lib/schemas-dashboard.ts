@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { telefonSemasi } from "./schemas";
+
 /**
  * Berber paneli Zod şemaları — `schemas.ts`'ten AYRI (200 satır sınırı, CLAUDE.md §2).
  *
@@ -124,4 +126,27 @@ export const istisnaSemasi = z
 /** Panel randevu listesi filtresi. */
 export const randevuFiltreSemasi = z.object({
   scope: z.enum(["today", "upcoming", "pending", "all"]).default("today"),
+});
+
+/**
+ * Manuel randevu — `POST /api/appointments/manual` (spec "Randevu akışı" madde 5,
+ * 2026-08-19 kapsam eklentisi).
+ *
+ * Public `randevuTalebiSemasi`'ndan farkları BİLİNÇLİDİR:
+ *   - `businessSlug` YOK: işletme oturumdan gelir, istemciden alınırsa berber
+ *     başkasının dükkanına randevu yazabilirdi.
+ *   - `turnstileToken` YOK: giriş yapmış berber zaten doğrulanmış bir insandır.
+ *
+ * `startsAt` yine MUTLAK andır (ISO 8601, offset zorunlu) — public akışla aynı
+ * sözleşme; yerel duvar saatine çeviri istemcide `mutlakAnHesapla` ile yapılır.
+ */
+export const manuelRandevuSemasi = z.object({
+  serviceId: z.string().min(1, "Hizmet seçilmedi."),
+  customerName: z
+    .string()
+    .trim()
+    .min(2, "Müşteri adını girin.")
+    .max(80, "Ad en fazla 80 karakter olabilir."),
+  customerPhone: telefonSemasi,
+  startsAt: z.iso.datetime({ offset: true, message: "Geçersiz tarih/saat biçimi." }),
 });

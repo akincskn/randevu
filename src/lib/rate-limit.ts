@@ -4,7 +4,7 @@ import { redis, REDIS_ZAMAN_ASIMI_MS, SAYAC_SCRIPT } from "./redis";
 import { withTimeout } from "./timeout";
 
 /**
- * Spec satır 45: "Aynı telefon numarasından günlük randevu talebi sayısı sınırlıdır."
+ * Spec satır 64: "Aynı telefon numarasından günlük randevu talebi sayısı sınırlıdır."
  */
 const GUNLUK_TALEP_LIMITI = 5;
 const GUN_SANIYE = 24 * 60 * 60;

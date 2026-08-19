@@ -21,8 +21,8 @@ import { turnstileDogrula } from "@/lib/turnstile";
  * Sıralama bilinçli: en ucuz kontrol önce, en pahalı en sonda.
  *   1. Şema doğrulama (CPU, ~0)
  *   2. Turnstile (dış çağrı) — bot trafiği DB'ye hiç ulaşmasın
- *   3. Rate limit (Redis) — spec satır 45
- *   4. Çalışma saati kontrolü (DB okuma) — spec satır 44 "sadece UI kontrolü değil"
+ *   3. Rate limit (Redis) — spec satır 64
+ *   4. Çalışma saati kontrolü (DB okuma) — spec satır 63 "sadece UI kontrolü değil"
  *   5. Yazma — slot çakışması EXCLUDE kısıtıyla DB'de engellenir
  */
 export async function POST(request: NextRequest): Promise<Response> {
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     // Slot çakışması burada KONTROL EDİLMEZ; Appointment_no_overlap_excl kısıtı
     // yazma anında karar verir. Önce-oku-sonra-yaz yaklaşımı yarış koşuluna açıktır
-    // (spec satır 44: "Race conditions are solved in the database, not the UI").
+    // (spec satır 63: "Race conditions are solved in the database, not the UI").
     const randevu = await prisma.appointment.create({
       data: {
         publicToken: publicTokenUret(),
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     // Randevu oluştu — hak gerçekten kullanıldı, iade edilmeyecek.
     kotaTuketilenTelefon = null;
 
-    // Spec satır 37: berbere ANINDA push bildirimi.
+    // Spec satır 56: berbere ANINDA push bildirimi.
     //
     // `after` ile YANIT GÖNDERİLDİKTEN SONRA çalışır: müşteri, berberin push
     // servisinin yavaşlığını beklemez. Çıplak fire-and-forget (await'siz promise)

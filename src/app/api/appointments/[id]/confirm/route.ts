@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { ApiError, toErrorResponse } from "@/lib/api-error";
+import { randevuDetayUrl } from "@/lib/appointment-links";
 import { APPOINTMENT_DTO_INCLUDE, toAppointmentDto } from "@/lib/dto";
 import { prisma } from "@/lib/prisma";
 import { oturumZorunlu } from "@/lib/session";
@@ -10,7 +11,7 @@ import { onayWhatsappLinki } from "@/lib/whatsapp";
  * PATCH /api/appointments/[id]/confirm — berber randevuyu onaylar (spec satır 25-29).
  *
  * Yanıtta `whatsappUrl` döner; mesajı GÖNDERMEZ. Berber linke tıklayıp kendi
- * WhatsApp'ından manuel gönderir (spec satır 28-29, satır 55: resmi API kapsam dışı).
+ * WhatsApp'ından manuel gönderir (spec satır 28-29, satır 74: resmi API kapsam dışı).
  *
  * Next.js 16: dinamik segment `params` bir Promise'tir, await edilmelidir.
  */
@@ -57,14 +58,7 @@ export async function PATCH(
 
     const dto = toAppointmentDto(guncel);
 
-    // Müşteri detay ekranının GERÇEK yolu (spec satır 30). Faz 3'e kadar burada
-    // `/r/<token>` yazıyordu ve öyle bir route hiç var olmadı — berberin WhatsApp'tan
-    // gönderdiği link 404 veriyordu. Yol, sayfanın kendisiyle aynı olmak ZORUNDA:
-    // src/app/(public)/[businessSlug]/appointment/[token]/page.tsx
-    const detayUrl = new URL(
-      `/${encodeURIComponent(isletme.slug)}/appointment/${encodeURIComponent(guncel.publicToken)}`,
-      process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin,
-    ).toString();
+    const detayUrl = randevuDetayUrl(isletme.slug, guncel.publicToken, request.nextUrl.origin);
 
     return Response.json({
       appointment: dto,

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Cloudflare Turnstile widget'ı — spec satır 46 ("basit bot/insan doğrulaması").
+ * Cloudflare Turnstile widget'ı — spec satır 65 ("basit bot/insan doğrulaması").
  *
  * Explicit render kullanılır (otomatik değil): widget'ın ne zaman kurulduğunu ve
  * ne zaman SIFIRLANDIĞINI bilmemiz gerekir. Turnstile token'ı TEK KULLANIMLIKTIR —

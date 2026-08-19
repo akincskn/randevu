@@ -26,7 +26,7 @@ const SLOTU_BIRAKAN_DURUMLAR = ["CANCELLED", "EXPIRED"] as const;
  * Spec satır 22: müşteri "uygun saati görür". Bu route yalnızca LİSTELER;
  * randevunun gerçekten alınabilirliğine POST /api/appointments karar verir
  * (çalışma saati kontrolü orada tekrarlanır, çakışma ise veritabanındaki
- * EXCLUDE kısıtıyla — spec satır 43-44).
+ * EXCLUDE kısıtıyla — spec satır 62-63).
  */
 export async function GET(request: NextRequest): Promise<Response> {
   try {

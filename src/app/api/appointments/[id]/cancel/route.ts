@@ -19,8 +19,8 @@ function tokenEsit(gelen: string, beklenen: string): boolean {
  * PATCH /api/appointments/[id]/cancel — randevu iptali.
  *
  * İKİ yetkilendirme yolu vardır ve ikisi de spec'e dayanır:
- *   - Müşteri: gövdede `publicToken` gönderir (spec satır 42 — iptal linki
- *     kriptografik rastgele token taşır; hesap yoktur, satır 50).
+ *   - Müşteri: gövdede `publicToken` gönderir (spec satır 61 — iptal linki
+ *     kriptografik rastgele token taşır; hesap yoktur, satır 69).
  *   - Berber: oturum cookie'si ile gelir, kendi işletmesinin randevusunu iptal eder.
  *
  * İkisi de yoksa 401. Yanlış token/başka işletme ise 403.

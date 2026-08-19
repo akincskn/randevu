@@ -9,7 +9,7 @@ import { IkincilButon } from "./form-ui";
  * Panelde tek bir randevu satırı.
  *
  * Durum SADECE renkle değil METİNLE de bildirilir (renk körlüğü + ekran okuyucu).
- * Aksiyonlar spec satır 25-26 (onayla) ve satır 42 (iptal) ile sınırlıdır;
+ * Aksiyonlar spec satır 25-26 (onayla) ve satır 61 (iptal) ile sınırlıdır;
  * COMPLETED/NO_SHOW işaretlemesi bu fazın kapsamı DIŞINDA (kullanıcı kararı, 2026-08-16).
  */
 

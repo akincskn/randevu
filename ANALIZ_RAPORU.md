@@ -252,7 +252,7 @@ Bir istisna açıkça karara bağlanmıştır: `GET /api/appointments/token/[tok
 `Appointment.id` alanını **döndürür** (`PROJECT_SPEC.md:85-89`). Gerekçe: iptal butonu
 `PATCH /api/appointments/[id]/cancel` çağırıyor ve o endpoint id'yi path'te bekliyor. Bu yanıtı
 yalnızca `publicToken`'ı bilen alır, iptal aynı token'ı ayrıca doğrular ve `publicToken` id'den
-türetilebilir değildir — yani spec satır 42 korunur.
+türetilebilir değildir — yani spec satır 61 korunur.
 
 ### 3.5 Fail-open ve fail-closed kararları
 
@@ -378,7 +378,7 @@ Ayrıca: placeholder kod yok, `// TODO: implement later` yok, gerçekmiş gibi s
 `any` kaçış kapısı yok. Bir şey mevcut adımda bitirilemiyorsa bu açıkça söylenir ve orada durulur.
 
 Bu protokolün pratikte çalıştığı repoda izlenebilir: `PROJECT_SPEC.md`'nin **"Onaylanan Çıkarımlar"**
-bölümü (satır 68-151), spec'te lafzen olmayan ama gerekli olan **16 ayrı kararı** tarih ve gerekçesiyle
+bölümü (satır 87-170), spec'te lafzen olmayan ama gerekli olan **16 ayrı kararı** tarih ve gerekçesiyle
 kayıt altına alır. Yani belirsizlikler tahminle kapatılmamış, kullanıcıya sorulup onaylandıktan
 sonra belgeye yazılmıştır.
 
@@ -847,7 +847,7 @@ FCM, gerçek Turnstile, gerçek QStash, gerçek Chrome — hepsi §5'te satır r
 Faz 7'de ~100 başlıkta **0 FAIL** (`ROADMAP.md:332`); son turda **23/23 PASS** (`ROADMAP.md:466`).
 
 **10. Kararlar ve ölçüm sınırları yazılıdır.** `PROJECT_SPEC.md`'nin "Onaylanan Çıkarımlar" bölümü
-16 kararı tarihiyle kayıt altına alır (satır 68-151); `ROADMAP.md` kapatılan kararların gerekçesini
+16 kararı tarihiyle kayıt altına alır (satır 87-170); `ROADMAP.md` kapatılan kararların gerekçesini
 *"ileride tekrar sorulmasın diye"* saklar (`ROADMAP.md:403-404`) ve test edilemeyen maddeleri ayrı
 başlık altında listeler (`ROADMAP.md:388-398`).
 

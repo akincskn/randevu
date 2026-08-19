@@ -9,7 +9,7 @@ import { BilgiKutusu, SecimButonu } from "./ui";
  * Hizmet seçimi — spec satır 22 ("müşteri ... hizmet seçer").
  *
  * Fiyat SADECE bilgi amaçlı gösterilir; online ödeme v1 kapsamı DIŞINDADIR
- * (spec satır 17 ve 56). Bu yüzden hiçbir yerde "öde/sepet" eylemi yoktur.
+ * (spec satır 17 ve 75). Bu yüzden hiçbir yerde "öde/sepet" eylemi yoktur.
  */
 export function ServicePicker({
   hizmetler,

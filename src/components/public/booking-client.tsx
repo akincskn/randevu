@@ -22,7 +22,7 @@ import { useAvailability } from "./use-availability";
  * Adım adım açılır: hizmet -> tarih -> saat -> ad+telefon. Her adım bir öncekini
  * gerektirir çünkü slot uzunluğu hizmete, müsaitlik ise güne bağlıdır.
  *
- * Veri Prisma'dan DEĞİL, `api/` + DTO katmanından gelir (STRUCTURE.md satır 59-60).
+ * Veri Prisma'dan DEĞİL, `api/` + DTO katmanından gelir (STRUCTURE.md satır 78-79).
  */
 export function BookingClient({ slug }: { slug: string }) {
   const router = useRouter();

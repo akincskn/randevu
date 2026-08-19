@@ -9,7 +9,7 @@ import { dashboardYaz, DashboardApiError } from "@/lib/dashboard-api";
 import { Alan, ALAN_SINIFI, AnaButon, Hata } from "./form-ui";
 
 /**
- * Berber giriş formu — spec satır 49 ("basit email/şifre").
+ * Berber giriş formu — spec satır 68 ("basit email/şifre").
  *
  * Faz 2'de yazılmış `POST /api/auth/login` çağrılır; oturum cookie'sini SUNUCU
  * `Set-Cookie` ile kurar (`HttpOnly`, bkz. `session.ts`). Burada token'a dokunulmaz.

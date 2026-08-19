@@ -4,7 +4,7 @@ import { ApiError } from "./api-error";
 import { serverEnv } from "./env";
 
 /**
- * Spec satır 46: "Basit bot/insan doğrulaması (örn. Cloudflare Turnstile) — ücretsiz,
+ * Spec satır 65: "Basit bot/insan doğrulaması (örn. Cloudflare Turnstile) — ücretsiz,
  * SMS/OTP maliyeti yok."
  */
 const DOGRULAMA_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";

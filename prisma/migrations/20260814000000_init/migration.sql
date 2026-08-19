@@ -164,7 +164,7 @@ ALTER TABLE "Service" ADD CONSTRAINT "Service_durationMinutes_positive_check"
     CHECK ("durationMinutes" > 0);
 
 -- ============================================================================
--- ELLE EKLENDİ (Prisma tarafından üretilmedi) — PROJECT_SPEC.md satır 43-44
+-- ELLE EKLENDİ (Prisma tarafından üretilmedi) — PROJECT_SPEC.md satır 62-63
 -- ============================================================================
 -- "Slot çakışması (iki müşterinin aynı saati alması) veritabanı seviyesinde
 --  engellenir (unique constraint + transaction, sadece UI kontrolü değil)."
@@ -181,7 +181,7 @@ ALTER TABLE "Service" ADD CONSTRAINT "Service_durationMinutes_positive_check"
 -- PREDICATE — hangi durumlar slotu TUTAR:
 --   TUTAR:  PENDING (spec satır 23), CONFIRMED (satır 26),
 --           COMPLETED ve NO_SHOW (geçmiş kayıt: o saat fiilen doluydu)
---   BIRAKIR: CANCELLED (iptal), EXPIRED (spec satır 32-35 zaman aşımı)
+--   BIRAKIR: CANCELLED (iptal), EXPIRED (spec satır 51-54 zaman aşımı)
 --
 -- Predicate BİLEREK olumsuz yazıldı: `NOT IN ('CANCELLED','EXPIRED')`.
 -- Gerekçe (fail-safe): enum'a ileride yeni bir durum eklenip bu predicate

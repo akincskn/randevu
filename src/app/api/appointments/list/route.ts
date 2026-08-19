@@ -16,7 +16,7 @@ import { mutlakAnHesapla, yerelAnHesapla } from "@/lib/timezone";
  * GET /api/appointments/list?scope=today|upcoming|pending|all
  *
  * Berber panelinin randevu kaynağı — spec satır 24 (bekleyen randevular) ve
- * satır 39 (her zaman görünür bekleyen sayısı rozeti).
+ * satır 58 (her zaman görünür bekleyen sayısı rozeti).
  *
  * `list` alt yolu ZORUNLU: `/api/appointments` üzerinde zaten public POST var
  * (spec satır 22). Aynı dosyaya oturum gerektiren bir GET koymak, public ve
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     }
 
     // Rozet sayacı filtreden BAĞIMSIZ: hangi sekmede olursak olalım toplam
-    // bekleyen sayısını gösterir (spec satır 39 "her zaman görünür").
+    // bekleyen sayısını gösterir (spec satır 58 "her zaman görünür").
     const [appointments, pendingCount] = await Promise.all([
       prisma.appointment.findMany({
         where: filtre,

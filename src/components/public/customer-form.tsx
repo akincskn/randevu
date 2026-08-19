@@ -7,9 +7,9 @@ import { HataKutusu } from "./ui";
 
 /**
  * Ad + telefon formu — spec satır 22-23 ("adı + telefon numarasıyla randevu
- * talebi oluşturur") ve satır 50 (müşteri hesabı YOK; şifre/e-posta istenmez).
+ * talebi oluşturur") ve satır 69 (müşteri hesabı YOK; şifre/e-posta istenmez).
  *
- * Gönderim, Turnstile token'ı gelene kadar kilitlidir (spec satır 46).
+ * Gönderim, Turnstile token'ı gelene kadar kilitlidir (spec satır 65).
  * Alan doğrulaması sunucuda `randevuTalebiSemasi` ile TEKRARLANIR — buradaki
  * `required`/`pattern` yalnızca kullanıcıya erken geri bildirimdir, güvenlik sınırı değil.
  */

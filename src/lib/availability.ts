@@ -44,7 +44,7 @@ export type UygunlukSonuc =
 /**
  * Randevunun işletmenin çalışma saatleri içinde olup olmadığını doğrular.
  *
- * Bu kontrol UI'daki slot listesini TEKRAR eder — bilinçli olarak. Spec satır 44
+ * Bu kontrol UI'daki slot listesini TEKRAR eder — bilinçli olarak. Spec satır 63
  * "sadece UI kontrolü değil" diyor; istemciden gelen saat asla güvenilir kabul
  * edilmez. (Slot ÇAKIŞMASI ayrı bir katmanda, veritabanı EXCLUDE kısıtıyla korunur.)
  */

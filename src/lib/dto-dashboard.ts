@@ -58,7 +58,7 @@ export const APPOINTMENT_ADMIN_SELECT = {
 /**
  * Panelin randevu yanıtı.
  *
- * `pendingCount` HER yanıtta döner — spec satır 39 rozetin "her zaman görünür"
+ * `pendingCount` HER yanıtta döner — spec satır 58 rozetin "her zaman görünür"
  * olmasını istiyor. Ayrı bir sayaç endpoint'i açmak yerine listeyle birlikte
  * göndermek, rozetin listeyle ASLA ayrışmamasını garanti eder.
  */

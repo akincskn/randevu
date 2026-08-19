@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { oturumZorunlu, sessionSilHeader } from "@/lib/session";
 
 /**
- * GET /api/auth/session — oturumdaki berberin kimliği (spec satır 48-49, UI katmanı).
+ * GET /api/auth/session — oturumdaki berberin kimliği (spec satır 67-68, UI katmanı).
  *
  * Dashboard sayfalarının açılış çağrısıdır: cookie `HttpOnly` olduğu için istemci
  * onu okuyamaz, "giriş yapmış mıyım?" sorusunu ancak sunucuya sorarak yanıtlayabilir.
@@ -17,7 +17,10 @@ export async function GET(request: NextRequest): Promise<Response> {
 
     const isletme = await prisma.business.findUnique({
       where: { id: businessId },
-      select: { slug: true, name: true, email: true },
+      // `timezone`: panelin yerel duvar saati <-> mutlak an çevirisi için gerekli
+      // (manuel randevu formu, spec "Randevu akışı" madde 5). Gizli bir veri
+      // değildir; public booking sayfası da aynı alanı görüyor (`dto.ts`).
+      select: { slug: true, name: true, email: true, timezone: true },
     });
 
     // İmza geçerli ama işletme silinmiş: cookie'yi de temizle, aksi halde

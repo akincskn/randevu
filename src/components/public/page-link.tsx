@@ -6,7 +6,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
  * Randevu detay sayfasının kendi adresini görünür/seçilebilir metin olarak ve
  * bir "Kopyala" butonuyla gösterir.
  *
- * Müşterinin HESABI YOKTUR (spec satır 50); bu URL randevuya geri dönmesinin tek
+ * Müşterinin HESABI YOKTUR (spec satır 69); bu URL randevuya geri dönmesinin tek
  * yoludur. Bu yüzden adres altı durumun HEPSİNDE gösterilir — düşmüş bir randevuda
  * bile müşteri neye baktığını görebilmelidir. Duruma göre değişen tek şey üstteki
  * açıklama cümlesidir (bkz. `appointment-status.tsx` -> `linkAciklamasi`).

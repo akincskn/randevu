@@ -6,6 +6,8 @@ import { useState } from "react";
 import type { RandevuKapsami } from "@/lib/dashboard-api";
 
 import { AppointmentList } from "./appointment-list";
+import { ManualAppointmentForm } from "./manual-appointment-form";
+import { useKabuk } from "./shell-context";
 
 const KAPSAMLAR: { deger: RandevuKapsami; etiket: string; bos: string }[] = [
   { deger: "pending", etiket: "Bekleyen", bos: "Onay bekleyen randevu yok." },
@@ -29,12 +31,40 @@ function kapsamCoz(ham: string | null): RandevuKapsami {
  */
 export function AppointmentsView() {
   const sorgu = useSearchParams();
+  const { rozetYenile, timezone } = useKabuk();
   const [kapsam, setKapsam] = useState<RandevuKapsami>(() => kapsamCoz(sorgu.get("scope")));
+  const [formAcik, setFormAcik] = useState(false);
+  // Manuel randevu eklendiğinde liste yeniden monte edilir; `AppointmentList`
+  // kendi verisini `key` değişiminde baştan çeker.
+  const [listeSurumu, setListeSurumu] = useState(0);
 
   const aktif = KAPSAMLAR.find((k) => k.deger === kapsam) ?? KAPSAMLAR[0];
 
   return (
     <section className="space-y-4">
+      {/* Spec "Randevu akışı" madde 5: berber elle randevu ekleyebilir. */}
+      <button
+        type="button"
+        onClick={() => setFormAcik((acik) => !acik)}
+        aria-expanded={formAcik}
+        className="min-h-11 w-full rounded-xl border-2 border-dashed border-neutral-300 px-4 font-semibold dark:border-neutral-700"
+      >
+        {formAcik ? "Formu kapat" : "+ Yeni Randevu Ekle"}
+      </button>
+
+      {formAcik ? (
+        <ManualAppointmentForm
+          timezone={timezone}
+          onOlusturuldu={() => {
+            setListeSurumu((n) => n + 1);
+            // Manuel randevu CONFIRMED doğar, yani bekleyen sayısını artırmaz —
+            // rozet yine de tazelenir: aynı slotu tutan bir PENDING kaydın
+            // durumu bu arada değişmiş olabilir.
+            rozetYenile();
+          }}
+        />
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {KAPSAMLAR.map((secenek) => (
           <button
@@ -56,7 +86,8 @@ export function AppointmentsView() {
       <AppointmentList
         // `key` şart: kapsam değiştiğinde liste state'i (hata/bilgi mesajları)
         // sıfırlanmalı, önceki sekmenin mesajı yeni sekmede kalmamalı.
-        key={kapsam}
+        // `listeSurumu` aynı mekanizmayı manuel ekleme sonrası tazeleme için kullanır.
+        key={`${kapsam}:${listeSurumu}`}
         kapsam={kapsam}
         tarihGoster
         bosMesaj={aktif.bos}

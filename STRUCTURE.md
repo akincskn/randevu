@@ -27,7 +27,7 @@ This is the required layout. Agents must not invent alternative structures.
 │   │   │   ├── login/page.tsx
 │   │   │   ├── register/page.tsx
 │   │   │   └── dashboard/
-│   │   │       ├── layout.tsx            # Shell: always-visible pending badge (spec 39)
+│   │   │       ├── layout.tsx            # Shell: always-visible pending badge (spec 58)
 │   │   │       ├── page.tsx              # Today's appointments
 │   │   │       ├── appointments/page.tsx
 │   │   │       ├── services/page.tsx
@@ -36,6 +36,7 @@ This is the required layout. Agents must not invent alternative structures.
 │   │       ├── appointments/
 │   │       │   ├── route.ts              # POST create (public, rate-limited)
 │   │       │   ├── list/route.ts         # GET barber's list + pendingCount (session)
+│   │       │   ├── manual/route.ts       # POST barber-entered appointment -> CONFIRMED (session)
 │   │       │   ├── token/[token]/route.ts # GET customer detail by publicToken
 │   │       │   └── [id]/
 │   │       │       ├── confirm/route.ts  # PATCH -> CONFIRMED, returns wa.me link
@@ -61,8 +62,9 @@ This is the required layout. Agents must not invent alternative structures.
 │   │           └── expire-appointments/route.ts  # Business-hours-aware expiry sweep
 │   ├── lib/
 │   │   ├── prisma.ts
+│   │   ├── appointment-links.ts          # Customer detail URL (shared: confirm + manual)
 │   │   ├── redis.ts                      # Upstash client + shared atomic counter
-│   │   ├── rate-limit.ts                 # Per-phone daily booking quota (spec line 45)
+│   │   ├── rate-limit.ts                 # Per-phone daily booking quota (spec line 64)
 │   │   ├── read-limit.ts                 # Per-IP limit for public GET routes
 │   │   ├── timezone.ts                   # Absolute instant <-> business local wall time
 │   │   ├── availability.ts               # Working-hours rules
@@ -77,7 +79,7 @@ This is the required layout. Agents must not invent alternative structures.
 │   │   ├── minute-time.ts                # minutes-from-midnight <-> "HH:MM"
 │   │   ├── push.ts                       # Web Push transport (VAPID) + dead-subscription cleanup
 │   │   ├── push-notifications.ts         # Notification CONTENT (new request, daily digest)
-│   │   ├── expiry.ts                     # PURE: business-hours-aware timeout maths (spec 32-35)
+│   │   ├── expiry.ts                     # PURE: business-hours-aware timeout maths (spec 51-54)
 │   │   ├── expiry-sweep.ts               # Sweep orchestration: read -> expire -> daily digest
 │   │   ├── digest-lock.ts                # Redis NX once-per-local-day guard for the digest
 │   │   └── cron-auth.ts                  # Bearer CRON_SECRET check (timing-safe)
@@ -117,9 +119,18 @@ This is the required layout. Agents must not invent alternative structures.
   different from the rest — it fails OPEN (see PROJECT_SPEC.md, 2026-08-16).
 - Push is split in two (Phase 5): `push.ts` only knows how to DELIVER a payload to one business's
   subscriptions and how to drop dead ones (HTTP 404/410); `push-notifications.ts` only knows what the
-  two spec-mandated messages SAY (spec lines 36-38). The daily digest function lives there ready to be
+  two spec-mandated messages SAY (spec lines 55-57). The daily digest function lives there ready to be
   called — its SCHEDULER is Phase 6's job and no timer exists in Phase 5.
 - `public/sw.js` is hand-authored browser JavaScript, not part of the Next.js bundle. It must be served
   from the root so its service-worker scope covers the whole site.
 - No route may query Prisma directly from a page component for public-facing pages — always go through
   `api/` + DTO layer, per `CLAUDE.md` rule 2.
+- `api/appointments/manual` is a separate route rather than a flag on the public `POST /api/appointments`.
+  The two differ in four ways at once (session vs Turnstile, no rate limit, `CONFIRMED` vs `PENDING`,
+  and a deliberate working-hours bypass); branching one handler on a caller-supplied flag would have put
+  the bypass one boolean away from the public path. Added 2026-08-19 with the scope addition recorded in
+  PROJECT_SPEC.md "Randevu akışı" item 5.
+- `manual-appointment-form.tsx` is split from `manual-appointment-fields.tsx` purely to stay under the
+  200-line limit in CLAUDE.md §2 (combined: 219 lines); the split is by responsibility — the fields file
+  holds no request or state logic.
+

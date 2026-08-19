@@ -1,7 +1,7 @@
 import { DashboardShell } from "@/components/dashboard/shell";
 
 /**
- * Panel layout'u — spec satır 39 gereği bekleyen randevu rozeti burada durur,
+ * Panel layout'u — spec satır 58 gereği bekleyen randevu rozeti burada durur,
  * böylece dört sekmenin hepsinde görünür kalır.
  *
  * VAPID PUBLIC anahtarı burada okunur (sunucu bileşeni) ve kabuğa prop olarak

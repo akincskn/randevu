@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 
 /**
- * Spec satır 42 / CLAUDE.md §2: "Randevu detay/iptal linkleri sıralı ID değil,
+ * Spec satır 61 / CLAUDE.md §2: "Randevu detay/iptal linkleri sıralı ID değil,
  * kriptografik olarak rastgele token kullanır."
  *
  * 32 bayt = 256 bit entropi. base64url ile 43 karaktere kodlanır; URL'de

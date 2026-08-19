@@ -16,11 +16,11 @@ import { Basari, Hata, Yukleniyor } from "./form-ui";
 import { useKabuk } from "./shell-context";
 
 /**
- * Randevu listesi + aksiyonlar — spec satır 24-26 ve 42.
+ * Randevu listesi + aksiyonlar — spec satır 24-26 ve 61.
  *
  * Onay yanıtındaki `whatsappUrl` YENİ SEKMEDE açılır: mesajı berber kendi
  * WhatsApp'ından MANUEL gönderir (spec satır 28-29). Otomatik gönderim yok,
- * WhatsApp Business API yok (satır 55 bunu kapsam dışı bırakıyor).
+ * WhatsApp Business API yok (satır 74 bunu kapsam dışı bırakıyor).
  */
 export function AppointmentList({
   kapsam,

@@ -83,7 +83,7 @@ export function dashboardYaz<T>(url: string, method: string, govde?: unknown): P
 }
 
 export interface OturumBilgisi {
-  business: { slug: string; name: string; email: string };
+  business: { slug: string; name: string; email: string; timezone: string };
 }
 
 export const oturumGetir = (): Promise<OturumBilgisi> =>
@@ -106,11 +106,28 @@ export interface OnayYaniti {
 export const randevuOnayla = (id: string): Promise<OnayYaniti> =>
   dashboardYaz<OnayYaniti>(`/api/appointments/${encodeURIComponent(id)}/confirm`, "PATCH");
 
+/**
+ * Manuel randevu ekleme — spec "Randevu akışı" madde 5 (2026-08-19).
+ *
+ * Yanıt `OnayYaniti` ile AYNI şekildedir: doğrudan CONFIRMED oluşan randevu ve
+ * OPSİYONEL bir `whatsappUrl`. Berber isterse müşteriye onay mesajı gönderir.
+ */
+export interface ManuelRandevuGirdisi {
+  serviceId: string;
+  customerName: string;
+  customerPhone: string;
+  /** Mutlak an, ISO 8601 (offset zorunlu). */
+  startsAt: string;
+}
+
+export const manuelRandevuOlustur = (girdi: ManuelRandevuGirdisi): Promise<OnayYaniti> =>
+  dashboardYaz<OnayYaniti>("/api/appointments/manual", "POST", girdi);
+
 /** Berber iptali: gövde BOŞ gider, yetki oturum cookie'sinden gelir. */
 export const randevuIptalEt = (id: string): Promise<AppointmentDto> =>
   dashboardYaz<AppointmentDto>(`/api/appointments/${encodeURIComponent(id)}/cancel`, "PATCH", {});
 
-/** Tarayıcının ürettiği push aboneliğini sunucuya kaydeder (spec satır 36-38). */
+/** Tarayıcının ürettiği push aboneliğini sunucuya kaydeder (spec satır 55-57). */
 export interface PushAbonelikGirdisi {
   endpoint: string;
   keys: { p256dh: string; auth: string };

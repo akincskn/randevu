@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Telefon numarası normalizasyonu.
  *
- * Rate limit anahtarı (spec satır 45) telefon numarasına dayandığı için, aynı
+ * Rate limit anahtarı (spec satır 64) telefon numarasına dayandığı için, aynı
  * numaranın farklı yazımları ("0532 111 22 33", "+90 532 111 22 33") AYNI
  * anahtara düşmelidir; aksi halde limit boşluk koyarak kolayca aşılır.
  *
@@ -17,8 +17,15 @@ export function telefonNormalizeEt(ham: string): string {
   return rakamlar;
 }
 
-/** Türkiye cep telefonu: 10 hane, 5 ile başlar (5XXXXXXXXX). */
-const telefonSemasi = z
+/**
+ * Türkiye cep telefonu: 10 hane, 5 ile başlar (5XXXXXXXXX).
+ *
+ * `export` edilir çünkü panelin manuel randevu şeması (`schemas-dashboard.ts`)
+ * müşteri telefonunu AYNI kurallarla doğrulamak zorunda: aynı numara iki farklı
+ * biçimde kaydedilirse müşteri iki ayrı kişi gibi görünür ve WhatsApp linki de
+ * farklı numaraya çıkar.
+ */
+export const telefonSemasi = z
   .string()
   .transform(telefonNormalizeEt)
   .refine((v) => /^5\d{9}$/.test(v), {
@@ -66,7 +73,7 @@ export const musaitlikSorgusuSemasi = z.object({
     }, "Böyle bir takvim günü yok."),
 });
 
-/** Spec satır 15-16: isim, telefon, opsiyonel adres, sektör + satır 49: email/şifre. */
+/** Spec satır 15-16: isim, telefon, opsiyonel adres, sektör + satır 68: email/şifre. */
 export const kayitSemasi = z.object({
   name: z.string().trim().min(2, "İşletme adını girin.").max(100),
   phone: telefonSemasi,
@@ -87,7 +94,7 @@ export const girisSemasi = z.object({
 });
 
 /**
- * İptal talebi — spec satır 42: müşteri, kendisine gelen linkteki `publicToken`
+ * İptal talebi — spec satır 61: müşteri, kendisine gelen linkteki `publicToken`
  * ile iptal eder. Berber ise oturumuyla iptal eder, token göndermez.
  */
 export const iptalSemasi = z.object({

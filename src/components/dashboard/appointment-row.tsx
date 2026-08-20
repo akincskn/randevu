@@ -9,8 +9,9 @@ import { IkincilButon } from "./form-ui";
  * Panelde tek bir randevu satırı.
  *
  * Durum SADECE renkle değil METİNLE de bildirilir (renk körlüğü + ekran okuyucu).
- * Aksiyonlar spec satır 25-26 (onayla) ve satır 71 (iptal) ile sınırlıdır;
- * COMPLETED/NO_SHOW işaretlemesi bu fazın kapsamı DIŞINDA (kullanıcı kararı, 2026-08-16).
+ * Aksiyonlar spec satır 25-26 (onayla) ve satır 71 (iptal) ile sınırlıdır.
+ * COMPLETED işaretlemesini cron yapar (`lib/completion-sweep.ts`); berber elle
+ * COMPLETED/NO_SHOW yazamaz (kullanıcı kararı, 2026-08-20).
  */
 
 const DURUM_METNI: Record<AppointmentAdminDto["status"], string> = {
@@ -36,17 +37,45 @@ export function AppointmentRow({
   timezone,
   tarihGoster,
   islemdeMi,
+  simdi,
+  duzenleniyorMu,
   onOnayla,
   onIptal,
+  onDuzenle,
+  children,
 }: {
   randevu: AppointmentAdminDto;
   timezone: string;
   tarihGoster: boolean;
   islemdeMi: boolean;
+  /** Liste tarafından üretilen "şu an" damgası; `null` ise henüz bilinmiyor. */
+  simdi: number | null;
+  /** Bu satırın düzenleme formu açık mı — buton metni ve `aria-expanded` için. */
+  duzenleniyorMu: boolean;
   onOnayla: () => void;
   onIptal: () => void;
+  onDuzenle: () => void;
+  /** Açıkken satırın altına yerleşen düzenleme formu. */
+  children?: React.ReactNode;
 }) {
-  const iptalEdilebilir = randevu.status === "PENDING" || randevu.status === "CONFIRMED";
+  // Geçmiş randevuya aksiyon gösterilmez. Eşikler cron'un kullandığı kurallarla
+  // BİREBİR aynıdır — panelin ve süpürmenin farklı şeye "geçmiş" demesi, aradaki
+  // 15 dakikalık cron boşluğunda tıklanan bir butonun 409 ile dönmesi demekti:
+  //   - onay eşiği `startsAt` (expiry.ts: saati geçen PENDING randevu EXPIRED olur),
+  //   - iptal eşiği `endsAt` (completion-sweep.ts: biten CONFIRMED randevu COMPLETED olur;
+  //     randevu SÜRERKEN berber hâlâ iptal edebilmeli).
+  // `simdi` henüz yoksa (ilk render) randevu GEÇMİŞ sayılır: aksiyonu bir kare
+  // geç göstermek, geçmiş randevuda buton göstermekten iyidir.
+  const baslamisMi = simdi === null || Date.parse(randevu.startsAt) <= simdi;
+  const bitmisMi = simdi === null || Date.parse(randevu.endsAt) <= simdi;
+
+  const onaylanabilir = randevu.status === "PENDING" && !baslamisMi;
+  // Düzenleme ve iptal AYNI eşiği paylaşır (kullanıcı kararı, 2026-08-20):
+  // bitmemiş bir PENDING/CONFIRMED randevu. `PATCH /api/appointments/[id]` de
+  // aynı kuralı uygular — buton, reddedileceğini bildiğimiz bir aksiyonu göstermez.
+  const duzenlenebilir =
+    (randevu.status === "PENDING" || randevu.status === "CONFIRMED") && !bitmisMi;
+  const iptalEdilebilir = duzenlenebilir;
 
   return (
     <li className="rounded-xl border border-neutral-200 px-4 py-3 dark:border-neutral-800">
@@ -74,9 +103,9 @@ export function AppointmentRow({
         </span>
       </div>
 
-      {randevu.status === "PENDING" || iptalEdilebilir ? (
+      {onaylanabilir || duzenlenebilir ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {randevu.status === "PENDING" ? (
+          {onaylanabilir ? (
             <button
               type="button"
               disabled={islemdeMi}
@@ -86,6 +115,11 @@ export function AppointmentRow({
               {islemdeMi ? "İşleniyor…" : "Onayla ve WhatsApp'tan bildir"}
             </button>
           ) : null}
+          {duzenlenebilir ? (
+            <IkincilButon disabled={islemdeMi} onClick={onDuzenle}>
+              {duzenleniyorMu ? "Düzenlemeyi kapat" : "Düzenle"}
+            </IkincilButon>
+          ) : null}
           {iptalEdilebilir ? (
             <IkincilButon tehlike disabled={islemdeMi} onClick={onIptal}>
               İptal et
@@ -93,6 +127,8 @@ export function AppointmentRow({
           ) : null}
         </div>
       ) : null}
+
+      {children}
     </li>
   );
 }

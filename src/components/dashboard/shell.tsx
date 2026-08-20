@@ -4,13 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 
-import {
-  cikisYap,
-  DashboardApiError,
-  oturumGetir,
-  randevulariGetir,
-  type OturumBilgisi,
-} from "@/lib/dashboard-api";
+import { cikisYap, DashboardApiError, oturumGetir, type OturumBilgisi } from "@/lib/dashboard-api";
+import { randevulariGetir } from "@/lib/dashboard-api-appointments";
 
 import { KabukSaglayici } from "./shell-context";
 import { Hata, Yukleniyor } from "./form-ui";

@@ -74,12 +74,19 @@ export function isletmeGetir(slug: string): Promise<BusinessPublicDto> {
   return istek<BusinessPublicDto>(`/api/businesses/${encodeURIComponent(slug)}`);
 }
 
+/**
+ * @param haricRandevuId Slot hesabından çıkarılacak randevu — panelin düzenleme
+ *   akışında düzenlenen randevunun KENDİ saatini kapatmaması için (bkz.
+ *   `musaitlikSorgusuSemasi.excludeAppointmentId`). Public akışta verilmez.
+ */
 export function musaitlikGetir(
   businessId: string,
   serviceId: string,
   date: string,
+  haricRandevuId?: string,
 ): Promise<AvailabilityDto> {
   const sorgu = new URLSearchParams({ businessId, serviceId, date });
+  if (haricRandevuId) sorgu.set("excludeAppointmentId", haricRandevuId);
   return istek<AvailabilityDto>(`/api/availability?${sorgu.toString()}`);
 }
 

@@ -22,13 +22,18 @@ export interface AppointmentAdminDto {
   startsAt: string;
   endsAt: string;
   status: Appointment["status"];
-  service: { name: string; durationMinutes: number };
+  /**
+   * `id` VERİLİR: düzenleme formu hizmet seçicisini mevcut hizmetle açmak
+   * zorunda (kullanıcı kararı, 2026-08-20). İsim eşleştirmesi kırılgan olurdu —
+   * aynı ada sahip iki hizmet tanımlanabilir.
+   */
+  service: { id: string; name: string; durationMinutes: number };
 }
 
 type AppointmentAdminKayit = Pick<
   Appointment,
   "id" | "customerName" | "customerPhone" | "startsAt" | "endsAt" | "status"
-> & { service: Pick<Service, "name" | "durationMinutes"> };
+> & { service: Pick<Service, "id" | "name" | "durationMinutes"> };
 
 export function toAppointmentAdminDto(kayit: AppointmentAdminKayit): AppointmentAdminDto {
   return {
@@ -39,6 +44,7 @@ export function toAppointmentAdminDto(kayit: AppointmentAdminKayit): Appointment
     endsAt: kayit.endsAt.toISOString(),
     status: kayit.status,
     service: {
+      id: kayit.service.id,
       name: kayit.service.name,
       durationMinutes: kayit.service.durationMinutes,
     },
@@ -52,7 +58,7 @@ export const APPOINTMENT_ADMIN_SELECT = {
   startsAt: true,
   endsAt: true,
   status: true,
-  service: { select: { name: true, durationMinutes: true } },
+  service: { select: { id: true, name: true, durationMinutes: true } },
 } as const;
 
 /**

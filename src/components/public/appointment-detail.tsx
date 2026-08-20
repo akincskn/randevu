@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import type { AppointmentDetailDto } from "@/lib/dto";
 import { fiyatBicimle, saatBicimle, tarihSaatBicimle } from "@/lib/format";
 import { PublicApiError, randevuGetir, randevuIptalEt } from "@/lib/public-api";
+import { useSuAn } from "@/lib/use-now";
 
 import { durumGorunumu } from "./appointment-status";
 import { SayfaLinki } from "./page-link";
@@ -23,6 +24,7 @@ export function AppointmentDetail({ token }: { token: string }) {
   const [onayBekliyor, setOnayBekliyor] = useState(false);
   const [iptalEdiliyor, setIptalEdiliyor] = useState(false);
   const [iptalHatasi, setIptalHatasi] = useState<string | null>(null);
+  const simdi = useSuAn();
 
   useEffect(() => {
     let iptal = false;
@@ -62,6 +64,12 @@ export function AppointmentDetail({ token }: { token: string }) {
   const tz = randevu.business.timezone;
   const fiyat = fiyatBicimle(randevu.service.price);
 
+  // Durum tek başına yetmez: randevu bitmiş ama cron henüz COMPLETED yazmamış
+  // olabilir (15 dakikalık tur aralığı). Sunucu bu isteği zaten 409 ile
+  // reddediyor — buton, reddedileceğini bildiğimiz bir aksiyonu göstermesin.
+  const iptalEdilebilir =
+    gorunum.iptalEdilebilir && simdi !== null && Date.parse(randevu.endsAt) > simdi;
+
   return (
     <div className="space-y-6">
       <div className={`rounded-xl border-2 px-4 py-3 ${gorunum.sinif}`}>
@@ -93,7 +101,7 @@ export function AppointmentDetail({ token }: { token: string }) {
 
       {iptalHatasi ? <HataKutusu mesaj={iptalHatasi} /> : null}
 
-      {gorunum.iptalEdilebilir ? (
+      {iptalEdilebilir ? (
         <div className="space-y-2">
           {onayBekliyor ? (
             <>

@@ -142,6 +142,34 @@ Model: her berber kendi bağımsız işletmesi (owner/staff hiyerarşisi yok —
   `expiresAt` kolonu EKLENMEDİ. Gerekçe: berber çalışma saatlerini veya bir istisna gününü
   randevu oluşturulduktan SONRA değiştirebilir; saklanan bir son tarih o anda eskir ve geri
   doldurma mantığı gerektirirdi. 2026-08-16 onaylandı
+- **Bitiş saati geçen CONFIRMED randevu otomatik COMPLETED olur** — spec bu geçişten hiç
+  bahsetmiyordu; berberin panelinde geçmiş bir randevu sonsuza dek "Onaylandı" kalıyor ve
+  altında anlamsız bir "İptal et" butonu duruyordu. Eşik `startsAt` DEĞİL `endsAt`'tir:
+  süren bir randevuya "tamamlandı" denmez ve berber randevu devam ederken hâlâ iptal
+  edebilmelidir. Yalnızca CONFIRMED dönüşür — PENDING randevular zaten EXPIRED olur
+  (berber onaylamadı ≠ randevu gerçekleşti). Süpürme mevcut QStash turuna bindirildi
+  (`lib/completion-sweep.ts`). **NO_SHOW bu sürümde YAZILMAZ**: berberin "müşteri gelmedi"
+  işaretlemesi kapsam dışıdır, enum değeri ileriye dönük durur. 2026-08-20 onaylandı
+- **Bitmiş randevu iptal edilemez** — `PATCH /api/appointments/[id]/cancel`, `endsAt`
+  geçmişse 409 INVALID_STATE döner. Durum kontrolü tek başına yetmezdi: cron 15 dakikada
+  bir çalıştığı için biten bir randevu COMPLETED yazılana kadar hâlâ CONFIRMED görünür.
+  Panel ve müşteri detay sayfası aynı eşiği uygulayıp butonu gizler, sunucu kararı
+  tekrarlar (CLAUDE.md §2). 2026-08-20 onaylandı
+- **Berber randevuyu panelden DÜZENLEYEBİLİR** (`PATCH /api/appointments/[id]`) — spec'te
+  yoktu, 2026-08-20 onaylandı. Değiştirilebilen alanlar: tarih/saat, hizmet, müşteri adı ve
+  telefonu. Kapsam iptal ile AYNI eşiktedir: yalnızca PENDING veya CONFIRMED ve `endsAt`
+  geçmemiş randevu. **`status` düzenlenebilir alan DEĞİLDİR** — onay `/confirm`'e, iptal
+  `/cancel`'a, COMPLETED/EXPIRED cron'a aittir; durumu serbest bir alan yapmak o üç
+  mekanizmanın kurallarını baypas ederdi. Düzenlenen randevu PENDING ise PENDING kalır.
+  Manuel eklemenin tüm korumaları geçerli: geçmiş saate taşınamaz, yalnızca kendi
+  işletmesinin aktif hizmeti seçilebilir, çakışmayı `Appointment_no_overlap_excl` verir
+  (409 SLOT_TAKEN). Yanıtta OPSİYONEL bir `whatsappUrl` döner ("randevunuz güncellendi");
+  onay akışıyla aynı desen — mesaj MANUEL gönderilir, otomatik gönderim yok.
+- **`GET /api/availability` opsiyonel `excludeAppointmentId` parametresi alır** — düzenlenen
+  randevu kendi saatini işgal ettiği için hariç tutulmazsa berber, saati AYNI bırakıp
+  yalnızca hizmeti değiştiremezdi. Sorgu zaten `businessId` ile filtreli olduğundan başka
+  bir dükkanın randevusu verilse bile hiçbir şeyi değiştirmez. Veritabanı tarafında
+  güvenlidir: satırın kendisini güncellemek EXCLUDE kısıtını ihlal etmez. 2026-08-20 onaylandı
 - **Süpürme Upstash QStash ile 15 dakikada bir tetiklenir** — Vercel Cron ücretsiz planda
   günde yalnızca 1 tetikleme verdiği için elendi: "açılıştan 1-2 saat sonra" kuralı ve
   her işletmeyi kendi açılış saatinde yakalaması gereken günlük özet günde tek çağrıyla

@@ -1,11 +1,5 @@
 import type { ApiErrorCode } from "./api-error";
-import type { AppointmentDto } from "./dto";
-import type {
-  AppointmentListDto,
-  ExceptionDto,
-  ServiceAdminDto,
-  WorkingHoursDto,
-} from "./dto-dashboard";
+import type { ExceptionDto, ServiceAdminDto, WorkingHoursDto } from "./dto-dashboard";
 
 /**
  * Dashboard'un API istemcisi — `public-api.ts`'in berber tarafındaki eşi.
@@ -13,6 +7,10 @@ import type {
  * AYRI tutuluyor çünkü iki katmanın hata sözleşmesi farklıdır: public tarafta 401
  * beklenmeyen bir durumdur, burada ise NORMAL akışın parçasıdır (oturum düşmüş,
  * `/login`'e gidilecek). `PublicApiError` ile karıştırmamak için ayrı bir sınıf.
+ *
+ * Randevu uç noktaları `dashboard-api-appointments.ts`'e AYRILDI (200 satır
+ * sınırı, CLAUDE.md §2); taşıma katmanı (`dashboardIstek`/`dashboardYaz`) ve
+ * `DashboardApiError` burada kalır, orası bunları içe aktarır.
  */
 
 export class DashboardApiError extends Error {
@@ -91,41 +89,6 @@ export const oturumGetir = (): Promise<OturumBilgisi> =>
 
 export const cikisYap = (): Promise<{ ok: boolean }> =>
   dashboardYaz<{ ok: boolean }>("/api/auth/session", "DELETE");
-
-export type RandevuKapsami = "today" | "upcoming" | "pending" | "all";
-
-export const randevulariGetir = (kapsam: RandevuKapsami): Promise<AppointmentListDto> =>
-  dashboardIstek<AppointmentListDto>(`/api/appointments/list?scope=${kapsam}`);
-
-/** Onay yanıtı `whatsappUrl` taşır — berber linke tıklayıp mesajı MANUEL gönderir. */
-export interface OnayYaniti {
-  appointment: AppointmentDto;
-  whatsappUrl: string;
-}
-
-export const randevuOnayla = (id: string): Promise<OnayYaniti> =>
-  dashboardYaz<OnayYaniti>(`/api/appointments/${encodeURIComponent(id)}/confirm`, "PATCH");
-
-/**
- * Manuel randevu ekleme — spec "Randevu akışı" madde 5 (2026-08-19).
- *
- * Yanıt `OnayYaniti` ile AYNI şekildedir: doğrudan CONFIRMED oluşan randevu ve
- * OPSİYONEL bir `whatsappUrl`. Berber isterse müşteriye onay mesajı gönderir.
- */
-export interface ManuelRandevuGirdisi {
-  serviceId: string;
-  customerName: string;
-  customerPhone: string;
-  /** Mutlak an, ISO 8601 (offset zorunlu). */
-  startsAt: string;
-}
-
-export const manuelRandevuOlustur = (girdi: ManuelRandevuGirdisi): Promise<OnayYaniti> =>
-  dashboardYaz<OnayYaniti>("/api/appointments/manual", "POST", girdi);
-
-/** Berber iptali: gövde BOŞ gider, yetki oturum cookie'sinden gelir. */
-export const randevuIptalEt = (id: string): Promise<AppointmentDto> =>
-  dashboardYaz<AppointmentDto>(`/api/appointments/${encodeURIComponent(id)}/cancel`, "PATCH", {});
 
 /** Tarayıcının ürettiği push aboneliğini sunucuya kaydeder (spec satır 65-67). */
 export interface PushAbonelikGirdisi {

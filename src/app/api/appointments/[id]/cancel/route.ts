@@ -74,6 +74,19 @@ export async function PATCH(
       );
     }
 
+    // BİTMİŞ bir randevu iptal edilemez (kullanıcı kararı, 2026-08-20). Durum
+    // kontrolü tek başına yetmez: cron 15 dakikada bir çalışıyor, yani biten bir
+    // randevu COMPLETED yazılana kadar hâlâ CONFIRMED görünür. Kontrol sunucuda
+    // TEKRARLANIR çünkü iki istemci de (panel ve müşteri detay sayfası) kendi
+    // saatine güvenir; yetkili karar burasıdır (CLAUDE.md §2).
+    if (randevu.endsAt.getTime() <= Date.now()) {
+      throw new ApiError(
+        "INVALID_STATE",
+        409,
+        "Geçmiş bir randevu iptal edilemez.",
+      );
+    }
+
     const guncel = await prisma.appointment.update({
       where: { id },
       data: { status: "CANCELLED" },

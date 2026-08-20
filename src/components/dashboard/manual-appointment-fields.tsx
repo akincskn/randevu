@@ -3,6 +3,13 @@
 import { DatePicker } from "@/components/public/date-picker";
 import { SlotPicker } from "@/components/public/slot-picker";
 import type { ServiceAdminDto } from "@/lib/dto-dashboard";
+
+/**
+ * Seçicinin ihtiyaç duyduğu ALT KÜME. Tam `ServiceAdminDto` istenmiyor çünkü
+ * düzenleme formu, pasife alınmış bir hizmeti listeye sentetik olarak geri
+ * ekleyebilmeli (o kayıt aktif hizmet listesinden gelmiyor).
+ */
+export type HizmetSecenegi = Pick<ServiceAdminDto, "id" | "name" | "durationMinutes">;
 import type { MusaitlikDurumu } from "@/components/public/use-availability";
 
 import { Alan, ALAN_SINIFI } from "./form-ui";
@@ -31,6 +38,8 @@ export interface ManuelRandevuAlanlari {
 }
 
 export function ManualAppointmentFields({
+  idOneki,
+  saatDisiEtiket,
   hizmetler,
   gunler,
   timezone,
@@ -38,7 +47,15 @@ export function ManualAppointmentFields({
   degerler,
   degistir,
 }: {
-  hizmetler: ServiceAdminDto[];
+  /**
+   * Alan `id`'lerinin öneki. Ekleme ve düzenleme formu AYNI anda açık olabilir;
+   * sabit id kullanılsaydı sayfada mükerrer id oluşur ve `<label for>` yanlış
+   * alana bağlanırdı (ekran okuyucu için de bozuk).
+   */
+  idOneki: string;
+  /** Bypass anahtarının metni; ekleme ile düzenlemede farklı fiil gerekiyor. */
+  saatDisiEtiket: string;
+  hizmetler: HizmetSecenegi[];
   /** İşletmenin bugününden itibaren rezervasyon ufku kadar gün. */
   gunler: string[];
   timezone: string;
@@ -51,9 +68,9 @@ export function ManualAppointmentFields({
 }) {
   return (
     <>
-      <Alan id="manuel-hizmet" etiket="Hizmet">
+      <Alan id={`${idOneki}-hizmet`} etiket="Hizmet">
         <select
-          id="manuel-hizmet"
+          id={`${idOneki}-hizmet`}
           value={degerler.serviceId}
           onChange={(olay) => degistir("serviceId", olay.target.value)}
           className={ALAN_SINIFI}
@@ -82,12 +99,12 @@ export function ManualAppointmentFields({
 
         {degerler.saatDisiMod ? (
           <Alan
-            id="manuel-serbest-saat"
+            id={`${idOneki}-serbest-saat`}
             etiket="Çalışma saati dışı saat"
             ipucu="Bu saat müsaitlik listesinde yok; çakışma olursa kayıt reddedilir."
           >
             <input
-              id="manuel-serbest-saat"
+              id={`${idOneki}-serbest-saat`}
               type="time"
               required
               value={degerler.serbestSaat}
@@ -117,13 +134,13 @@ export function ManualAppointmentFields({
             onChange={(olay) => degistir("saatDisiMod", olay.target.checked)}
             className="h-4 w-4"
           />
-          Çalışma saati dışına randevu ekle
+          {saatDisiEtiket}
         </label>
       </div>
 
-      <Alan id="manuel-ad" etiket="Müşteri adı">
+      <Alan id={`${idOneki}-ad`} etiket="Müşteri adı">
         <input
-          id="manuel-ad"
+          id={`${idOneki}-ad`}
           type="text"
           required
           value={degerler.ad}
@@ -132,9 +149,9 @@ export function ManualAppointmentFields({
         />
       </Alan>
 
-      <Alan id="manuel-telefon" etiket="Telefon" ipucu="Örn. 0532 111 22 33">
+      <Alan id={`${idOneki}-telefon`} etiket="Telefon" ipucu="Örn. 0532 111 22 33">
         <input
-          id="manuel-telefon"
+          id={`${idOneki}-telefon`}
           type="tel"
           required
           inputMode="tel"

@@ -150,3 +150,20 @@ export const manuelRandevuSemasi = z.object({
   customerPhone: telefonSemasi,
   startsAt: z.iso.datetime({ offset: true, message: "Geçersiz tarih/saat biçimi." }),
 });
+
+/**
+ * Randevu düzenleme — `PATCH /api/appointments/[id]` (kullanıcı kararı, 2026-08-20).
+ *
+ * TÜM alanlar opsiyoneldir ve en az biri gönderilmelidir; `hizmetGuncelleSemasi`
+ * ile aynı desen. Gönderilmeyen alan DEĞİŞMEZ — istemcinin tüm kaydı geri
+ * yollamasını beklemek, iki sekmede açık panelde birinin diğerinin değişikliğini
+ * sessizce geri almasına yol açardı.
+ *
+ * `status` BURADA YOK ve bilinçlidir: durum geçişlerinin kendi uç noktaları var
+ * (`/confirm`, `/cancel`) ve COMPLETED/EXPIRED'ı cron yazar. Durumu serbest bir
+ * güncelleme alanı yapmak, o üç mekanizmanın kurallarını baypas ederdi.
+ */
+export const randevuGuncelleSemasi = manuelRandevuSemasi.partial().refine(
+  (deger) => Object.keys(deger).length > 0,
+  "Güncellenecek en az bir alan gönderin.",
+);

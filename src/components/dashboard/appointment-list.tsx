@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { DashboardApiError } from "@/lib/dashboard-api";
 import {
-  DashboardApiError,
   randevulariGetir,
   randevuIptalEt,
   randevuOnayla,
   type RandevuKapsami,
-} from "@/lib/dashboard-api";
+} from "@/lib/dashboard-api-appointments";
 import type { AppointmentAdminDto } from "@/lib/dto-dashboard";
+import { useSuAn } from "@/lib/use-now";
 
+import { AppointmentEditForm } from "./appointment-edit-form";
 import { AppointmentRow } from "./appointment-row";
 import { Basari, Hata, Yukleniyor } from "./form-ui";
 import { useKabuk } from "./shell-context";
@@ -31,7 +33,9 @@ export function AppointmentList({
   bosMesaj: string;
   tarihGoster: boolean;
 }) {
-  const { rozetYenile } = useKabuk();
+  const { rozetYenile, businessId } = useKabuk();
+  // Tek sayaç tüm satırlara yeter — her satırın kendi `setInterval`'ı olmasın.
+  const simdi = useSuAn();
 
   const [randevular, setRandevular] = useState<AppointmentAdminDto[] | null>(null);
   const [timezone, setTimezone] = useState("Europe/Istanbul");
@@ -39,6 +43,9 @@ export function AppointmentList({
   const [islemdeki, setIslemdeki] = useState<string | null>(null);
   const [bilgi, setBilgi] = useState<string | null>(null);
   const [yenileme, setYenileme] = useState(0);
+  // AYNI ANDA TEK form açık: iki randevuyu paralel düzenlemek, ikisinin de aynı
+  // slotu hedeflediği bir durumda hangisinin kazandığını takip edilemez kılardı.
+  const [duzenlenen, setDuzenlenen] = useState<string | null>(null);
 
   const yenile = useCallback(() => setYenileme((n) => n + 1), []);
 
@@ -66,6 +73,7 @@ export function AppointmentList({
     setHata(null);
     setBilgi(null);
     try {
+      setDuzenlenen(null);
       const sonuc = await randevuOnayla(id);
       // Yeni sekme: berberin paneli açık kalır, WhatsApp ayrı sekmede açılır.
       // `noopener` şart — açılan sayfa `window.opener` üzerinden panele erişemesin.
@@ -85,6 +93,7 @@ export function AppointmentList({
     setHata(null);
     setBilgi(null);
     try {
+      setDuzenlenen(null);
       await randevuIptalEt(id);
       setBilgi("Randevu iptal edildi.");
       yenile();
@@ -118,9 +127,30 @@ export function AppointmentList({
               timezone={timezone}
               tarihGoster={tarihGoster}
               islemdeMi={islemdeki === randevu.id}
+              simdi={simdi}
+              duzenleniyorMu={duzenlenen === randevu.id}
               onOnayla={() => void onayla(randevu.id)}
               onIptal={() => void iptal(randevu.id)}
-            />
+              onDuzenle={() =>
+                setDuzenlenen((onceki) => (onceki === randevu.id ? null : randevu.id))
+              }
+            >
+              {duzenlenen === randevu.id ? (
+                <AppointmentEditForm
+                  randevu={randevu}
+                  businessId={businessId}
+                  timezone={timezone}
+                  onKapat={() => setDuzenlenen(null)}
+                  onGuncellendi={() => {
+                    // Form AÇIK kalır: WhatsApp bildirim linki yanıtla birlikte
+                    // geliyor ve formu kapatmak onu görünmeden yok ederdi.
+                    setBilgi("Randevu güncellendi.");
+                    yenile();
+                    rozetYenile();
+                  }}
+                />
+              ) : null}
+            </AppointmentRow>
           ))}
         </ul>
       )}

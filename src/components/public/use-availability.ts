@@ -35,13 +35,15 @@ export function useAvailability(
   businessId: string | null,
   serviceId: string | null,
   isoGun: string | null,
+  /** Panelin düzenleme akışında kendi saatini kapatmaması gereken randevu. */
+  haricRandevuId?: string,
 ): MusaitlikDurumu {
   const [sonuc, setSonuc] = useState<Sonuc | null>(null);
   const [yenilemeSayaci, setYenilemeSayaci] = useState(0);
 
   const anahtar =
     businessId && serviceId && isoGun
-      ? `${businessId}|${serviceId}|${isoGun}|${yenilemeSayaci}`
+      ? `${businessId}|${serviceId}|${isoGun}|${haricRandevuId ?? ""}|${yenilemeSayaci}`
       : null;
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export function useAvailability(
 
     let iptal = false;
 
-    musaitlikGetir(businessId, serviceId, isoGun)
+    musaitlikGetir(businessId, serviceId, isoGun, haricRandevuId)
       .then((veri) => {
         if (!iptal) setSonuc({ anahtar, slotlar: veri.slots, hata: null });
       })
@@ -67,7 +69,7 @@ export function useAvailability(
     return () => {
       iptal = true;
     };
-  }, [anahtar, businessId, serviceId, isoGun]);
+  }, [anahtar, businessId, serviceId, isoGun, haricRandevuId]);
 
   const guncel = sonuc !== null && sonuc.anahtar === anahtar ? sonuc : null;
 

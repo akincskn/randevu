@@ -71,6 +71,19 @@ export const musaitlikSorgusuSemasi = z.object({
         an.getUTCFullYear() === yil && an.getUTCMonth() === ay - 1 && an.getUTCDate() === gun
       );
     }, "Böyle bir takvim günü yok."),
+  /**
+   * Slot hesabından ÇIKARILACAK randevu (berber panelindeki düzenleme akışı).
+   *
+   * Düzenlenen randevu kendi saatini işgal ediyor; hariç tutulmazsa berber
+   * saati AYNI bırakıp yalnızca hizmeti değiştiremezdi — kendi randevusu o
+   * saati listeden siler. Veritabanı tarafında güvenlidir: satırın kendisini
+   * güncellemek EXCLUDE kısıtını ihlal etmez.
+   *
+   * Sızıntı riski yok: sorgu zaten `businessId` ile filtreli, yani başka bir
+   * dükkanın randevusu verilse bile hiçbir şeyi değiştirmez. Etkisi en fazla
+   * "kendi randevunun saatini kendi listende görmek"tir.
+   */
+  excludeAppointmentId: z.string().min(1).optional(),
 });
 
 /** Spec satır 15-16: isim, telefon, opsiyonel adres, sektör + satır 78: email/şifre. */

@@ -34,19 +34,23 @@ function tarihBicimle(isoAn: string, timezone: string): string {
 }
 
 /**
- * Onay mesajının hazır metnini ve WhatsApp linkini üretir (spec satır 27).
+ * Mesajın ORTAK gövdesi: selamlama, özet cümlesi, tarih/hizmet/adres bloğu ve
+ * detay linki. Onay ve güncelleme mesajları yalnızca özet cümlesinde ayrışır —
+ * blok tek yerde tutulmazsa iki mesaj biçimi zamanla birbirinden uzaklaşır.
  *
  * @param detayUrl Müşterinin randevu detayını göreceği public link (spec satır 30).
  */
-export function onayWhatsappLinki(
+function whatsappLinki(
   randevu: AppointmentDto,
   timezone: string,
   detayUrl: string,
+  /** Selamlama ile detay bloğu arasındaki tek cümlelik özet. */
+  ozet: string,
 ): string {
   const satirlar = [
     `Merhaba ${randevu.customerName},`,
     "",
-    `${randevu.business.name} randevunuz onaylandı.`,
+    ozet,
     "",
     `📅 ${tarihBicimle(randevu.startsAt, timezone)}`,
     `✂️ ${randevu.service.name} (${randevu.service.durationMinutes} dk)`,
@@ -61,4 +65,38 @@ export function onayWhatsappLinki(
   const metin = encodeURIComponent(satirlar.join("\n"));
   const numara = waNumaraBicimle(randevu.customerPhone);
   return `https://api.whatsapp.com/send/?phone=${numara}&text=${metin}&type=phone_number&app_absent=0`;
+}
+
+export function onayWhatsappLinki(
+  randevu: AppointmentDto,
+  timezone: string,
+  detayUrl: string,
+): string {
+  return whatsappLinki(
+    randevu,
+    timezone,
+    detayUrl,
+    `${randevu.business.name} randevunuz onaylandı.`,
+  );
+}
+
+/**
+ * Berber randevuyu panelden DÜZENLEDİĞİNDE üretilen mesaj (kullanıcı kararı, 2026-08-20).
+ *
+ * Onay mesajıyla AYNI gövdeyi paylaşır, yalnızca özet cümlesi ayrışır: müşterinin
+ * gördüğü tarih/hizmet/adres bloğu iki mesajda da aynı kalmalı, yoksa iki biçim
+ * zamanla ayrışır. Bu link de OTOMATİK GÖNDERİLMEZ — berber tıklarsa gider
+ * (spec satır 28-29, satır 84).
+ */
+export function guncellemeWhatsappLinki(
+  randevu: AppointmentDto,
+  timezone: string,
+  detayUrl: string,
+): string {
+  return whatsappLinki(
+    randevu,
+    timezone,
+    detayUrl,
+    `${randevu.business.name} randevunuz güncellendi. Yeni bilgiler aşağıda:`,
+  );
 }

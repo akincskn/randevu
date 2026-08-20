@@ -96,6 +96,10 @@ export async function GET(request: NextRequest): Promise<Response> {
         status: { notIn: [...SLOTU_BIRAKAN_DURUMLAR] },
         startsAt: { lt: new Date(gunBasi + 2 * 86_400_000) },
         endsAt: { gt: new Date(gunBasi - 86_400_000) },
+        // Düzenlenen randevu kendi saatini kapatmasın (bkz. `musaitlikSorgusuSemasi`).
+        // `businessId` filtresi yukarıda olduğu için hariç tutma otomatik olarak
+        // yalnızca AYNI işletmenin randevusu için etkilidir.
+        ...(sorgu.excludeAppointmentId ? { id: { not: sorgu.excludeAppointmentId } } : {}),
       },
       select: { startsAt: true, endsAt: true },
     });

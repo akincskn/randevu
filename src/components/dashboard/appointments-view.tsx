@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import type { RandevuKapsami } from "@/lib/dashboard-api";
+import type { RandevuKapsami } from "@/lib/dashboard-api-appointments";
 
 import { AppointmentList } from "./appointment-list";
 import { ManualAppointmentForm } from "./manual-appointment-form";

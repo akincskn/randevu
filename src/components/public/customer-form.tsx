@@ -89,7 +89,7 @@ export function CustomerForm({
           className={alanSinifi}
         />
         <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Berber onay mesajını bu numaraya WhatsApp&apos;tan gönderecek.
+          İşletme onay mesajını bu numaraya WhatsApp&apos;tan gönderecek.
         </p>
       </div>
 

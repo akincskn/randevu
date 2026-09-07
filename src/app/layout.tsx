@@ -21,11 +21,12 @@ const geistMono = Geist_Mono({
  */
 export const metadata: Metadata = {
   title: {
-    default: "Randevu — Berber ve Kuaför Randevu Sistemi",
+    default: "Randevu — Online Randevu Sistemi",
     template: "%s · Randevu",
   },
   description:
-    "Berber ve kuaförler için ücretsiz online randevu sistemi. " +
+    "Berber, kuaför, diş kliniği ve randevuyla çalışan tüm işletmeler için " +
+    "ücretsiz online randevu sistemi. " +
     "Müşterileriniz uygulama indirmeden, telefonlarından randevu alır.",
 };
 

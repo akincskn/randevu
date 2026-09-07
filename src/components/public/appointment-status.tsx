@@ -40,7 +40,7 @@ const NOTR =
 const GORUNUMLER: Record<Durum, DurumGorunumu> = {
   PENDING: {
     baslik: "Talebiniz alındı",
-    aciklama: "Berber onayladığında WhatsApp üzerinden bilgilendirileceksiniz.",
+    aciklama: "İşletme onayladığında WhatsApp üzerinden bilgilendirileceksiniz.",
     sinif: BEKLEME,
     iptalEdilebilir: true,
     linkAciklamasi: AKTIF_LINK,

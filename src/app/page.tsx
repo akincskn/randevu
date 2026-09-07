@@ -9,7 +9,7 @@ import Link from "next/link";
  * bölümü KASITEN yoktur — spec'te olmayan bir pazarlama yüzeyi büyütmemek için.
  *
  * Müşteriler buraya değil, işletmenin kendi public linkine (`/[businessSlug]`)
- * gelir (spec satır 22); bu sayfanın hedef kitlesi berberdir.
+ * gelir (spec satır 22); bu sayfanın hedef kitlesi işletme sahibidir.
  */
 export default function Home() {
   return (
@@ -17,7 +17,7 @@ export default function Home() {
       <h1 className="text-3xl font-bold tracking-tight">Randevu</h1>
 
       <p className="mt-3 text-neutral-600 dark:text-neutral-400">
-        Berber ve kuaförler için ücretsiz, basit randevu sistemi.
+        Randevuyla çalışan işletmeler için ücretsiz, basit randevu sistemi.
       </p>
 
       <Link

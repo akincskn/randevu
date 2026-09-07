@@ -91,7 +91,9 @@ export const kayitSemasi = z.object({
   name: z.string().trim().min(2, "İşletme adını girin.").max(100),
   phone: telefonSemasi,
   address: z.string().trim().max(200).optional(),
-  sector: z.enum(["BERBER", "KUAFOR"], { message: "Sektör BERBER veya KUAFOR olmalı." }),
+  sector: z.enum(["BERBER", "KUAFOR", "DISCI"], {
+    message: "Sektör BERBER, KUAFOR veya DISCI olmalı.",
+  }),
   email: z.email("Geçerli bir e-posta adresi girin.").toLowerCase(),
   password: z
     .string()

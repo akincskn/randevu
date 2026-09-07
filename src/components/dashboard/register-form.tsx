@@ -85,6 +85,7 @@ export function RegisterForm() {
         >
           <option value="BERBER">Berber</option>
           <option value="KUAFOR">Kuaför</option>
+          <option value="DISCI">Dişçi</option>
         </select>
       </Alan>
 

@@ -20,6 +20,7 @@ datasource db {
 enum Sector {
   BERBER
   KUAFOR
+  DISCI
 }
 
 // Spec satır 23 (PENDING), 26 (CONFIRMED), 64 + 71 (iptal -> CANCELLED).
